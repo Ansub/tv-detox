@@ -8,7 +8,7 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-/** Keeps the wallpaper in its own buffer, independent of the TV's UI resolution. */
+/** Draws the wallpaper once on a surface that follows the UI layout. */
 final class WallpaperView extends SurfaceView implements SurfaceHolder.Callback {
     private final WallpaperDrawable wallpaper;
 
@@ -18,19 +18,8 @@ final class WallpaperView extends SurfaceView implements SurfaceHolder.Callback 
         setFocusable(false);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
         getHolder().setFormat(PixelFormat.RGBX_8888);
+        getHolder().setSizeFromLayout();
         getHolder().addCallback(this);
-    }
-
-    @Override
-    protected void onSizeChanged(int width, int height, int oldWidth, int oldHeight) {
-        super.onSizeChanged(width, height, oldWidth, oldHeight);
-        if (width <= 0 || height <= 0) return;
-        // Match the window's aspect ratio while retaining all visible source detail.
-        // For a UHD photo on a 1080p UI, this requests a 3840 x 2160 surface.
-        float scale = Math.min(wallpaper.getIntrinsicWidth() / (float) width,
-                wallpaper.getIntrinsicHeight() / (float) height);
-        getHolder().setFixedSize(Math.max(1, Math.round(width * scale)),
-                Math.max(1, Math.round(height * scale)));
     }
 
     @Override public void surfaceCreated(SurfaceHolder holder) {}

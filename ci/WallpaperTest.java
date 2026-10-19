@@ -35,13 +35,29 @@ public final class WallpaperTest extends Instrumentation {
     public void onStart() {
         Bundle result = new Bundle();
         try {
-            WallpaperDrawable image = WallpaperDrawable.load(getContext(), "uhd.png");
-            check(image != null && image.getIntrinsicWidth() == 3840 && image.getIntrinsicHeight() == 2160,
-                    "A UHD image must retain all source pixels");
-            WallpaperDrawable larger = WallpaperDrawable.load(getContext(), "oversized.png");
-            check(larger != null && larger.getIntrinsicWidth() == 3840 && larger.getIntrinsicHeight() == 2160,
-                    "Larger images must be sampled before allocating their pixels");
+            WallpaperDrawable image = WallpaperDrawable.load(getContext(), "uhd.png", 1920, 1080);
+            check(image != null && image.getIntrinsicWidth() == 1920 && image.getIntrinsicHeight() == 1080,
+                    "A UHD image must decode at 1080p for a 1080p UI");
+            WallpaperDrawable nativeSize = WallpaperDrawable.load(getContext(), "uhd.png", 3840, 2160);
+            check(nativeSize != null && nativeSize.getIntrinsicWidth() == 3840 && nativeSize.getIntrinsicHeight() == 2160,
+                    "A UHD UI must retain UHD source detail");
+            nativeSize = null;
+            WallpaperDrawable larger = WallpaperDrawable.load(getContext(), "oversized.png", 1920, 1080);
+            check(larger != null && larger.getIntrinsicWidth() == 1920 && larger.getIntrinsicHeight() == 1080,
+                    "Larger images must be sampled to the UI size before allocation");
             larger = null;
+            WallpaperDrawable automatic = WallpaperDrawable.load(getContext(), "uhd.png");
+            android.util.DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
+            check(automatic != null && automatic.getIntrinsicWidth() <= metrics.widthPixels
+                    && automatic.getIntrinsicHeight() <= metrics.heightPixels,
+                    "The default loader must follow Android UI metrics");
+            automatic = null;
+            WallpaperDrawable smaller = WallpaperDrawable.load(getContext(), "uhd.png", 7680, 4320);
+            check(smaller != null && smaller.getIntrinsicWidth() == 3840 && smaller.getIntrinsicHeight() == 2160,
+                    "Decoding must not enlarge the source image");
+            smaller = null;
+            check(WallpaperDrawable.load(getContext(), "uhd.png", 0, 1080) == null,
+                    "Invalid UI dimensions must leave the gradient available");
 
             Bitmap cropped = Bitmap.createBitmap(200, 200, Bitmap.Config.ARGB_8888);
             image.setBounds(20, 30, 180, 170);
@@ -65,7 +81,7 @@ public final class WallpaperTest extends Instrumentation {
                 // Use a known viewport, independent of an emulator's navigation bar.
                 activity.addContentView(view, new FrameLayout.LayoutParams(1920, 1080));
             });
-            awaitSurface(3840, 2160);
+            awaitSurface(1920, 1080);
             checkPixels();
 
             runOnMainSync(() -> {
@@ -73,7 +89,7 @@ public final class WallpaperTest extends Instrumentation {
                 view.getLayoutParams().height = 320;
                 view.requestLayout();
             });
-            awaitSurface(3240, 2160);
+            awaitSurface(480, 320);
             checkPixels();
 
             runOnMainSync(() -> view.setVisibility(View.GONE));
@@ -88,9 +104,9 @@ public final class WallpaperTest extends Instrumentation {
                 view.setVisibility(View.VISIBLE);
                 view.requestLayout();
             });
-            awaitSurface(3840, 2160);
+            awaitSurface(1920, 1080);
             checkPixels();
-            result.putString("stream", "PASS: UHD decode and surface, oversized image sampling, crop, shade, "
+            result.putString("stream", "PASS: automatic UI-sized decode and surface, native UHD decode, oversized sampling, crop, shade, "
                     + "missing/invalid fallback, aspect ratio and surface recreation\n");
             finish(Activity.RESULT_OK, result);
         } catch (Throwable failure) {
@@ -124,7 +140,7 @@ public final class WallpaperTest extends Instrumentation {
         }, new Handler(Looper.getMainLooper())));
         check(done.await(5, TimeUnit.SECONDS) && status[0] == PixelCopy.SUCCESS,
                 "The surface must contain a posted frame");
-        check(copy.getPixel(80, 20) == Color.GREEN, "The UHD surface must contain the source image");
+        check(copy.getPixel(80, 20) == Color.GREEN, "The UI-sized surface must contain the source image");
         copy.recycle();
     }
 }

@@ -12,13 +12,14 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
+import android.util.DisplayMetrics;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 /** A static image with center cropping and a shade behind the lower tiles. */
 final class WallpaperDrawable extends Drawable {
-    // A UHD image fits without sampling: 3840 * 2160 * 4 bytes, about 32 MiB.
+    // Additional allocation guard for large UI sizes; ordinary images follow the UI metrics.
     private static final long MAX_PIXELS = 3840L * 2160;
     private static final int MAX_EDGE = 4096;
     private final Bitmap bitmap;
@@ -29,8 +30,17 @@ final class WallpaperDrawable extends Drawable {
 
     private WallpaperDrawable(Bitmap bitmap) { this.bitmap = bitmap; }
 
-    /** Missing, unreadable or unaffordable images leave the original gradient in place. */
+    /** Sample for the UI Android exposes, which can be smaller than the TV panel. */
     static WallpaperDrawable load(Context context, String asset) {
+        DisplayMetrics size = context.getResources().getDisplayMetrics();
+        return load(context, asset, size.widthPixels, size.heightPixels);
+    }
+
+    /** Missing, unreadable or unallocatable images leave the original gradient in place. */
+    static WallpaperDrawable load(Context context, String asset, int targetWidth, int targetHeight) {
+        if (targetWidth <= 0 || targetHeight <= 0) return null;
+        int maxWidth = Math.min(MAX_EDGE, targetWidth);
+        int maxHeight = Math.min(MAX_EDGE, targetHeight);
         try {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = true;
@@ -43,7 +53,7 @@ final class WallpaperDrawable extends Drawable {
             while (true) {
                 long width = ((long) options.outWidth + sample - 1) / sample;
                 long height = ((long) options.outHeight + sample - 1) / sample;
-                if (width <= MAX_EDGE && height <= MAX_EDGE && width * height <= MAX_PIXELS) break;
+                if (width <= maxWidth && height <= maxHeight && width * height <= MAX_PIXELS) break;
                 if (sample >= (1 << 30)) return null;
                 sample *= 2;
             }
