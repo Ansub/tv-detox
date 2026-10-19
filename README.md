@@ -323,6 +323,8 @@ HDMI inputs are found on their own. The labels follow the TV's language, with 16
 
 It's one screen of plain Java, no libraries, no Gradle. The background is drawn once, the only animation is the focus lift, and it uses about 30 MB of RAM.
 
+For an optional static wallpaper, see [Wallpaper support](docs/wallpaper.md). UHD images retain their source resolution in a separate surface; actual output depends on the TV. The default build keeps the gradient and its original memory footprint.
+
 </details>
 
 ## Contributing

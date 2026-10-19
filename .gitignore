@@ -3,3 +3,6 @@ key.jks
 *.apk
 .DS_Store
 .idea
+
+# Keep personal wallpaper images out of contributions.
+/assets/wallpaper.jpg

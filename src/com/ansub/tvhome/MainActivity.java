@@ -161,7 +161,14 @@ public class MainActivity extends Activity {
         moveHint.setVisibility(View.GONE);
         root.addView(moveHint, at(px(MARGIN), px(ROW1_TOP - 64), -2, -2));
 
-        setContentView(scroller);
+        WallpaperDrawable wallpaper = WallpaperDrawable.load(this, "wallpaper.jpg");
+        if (wallpaper == null) setContentView(scroller);
+        else {
+            FrameLayout page = new FrameLayout(this);
+            page.addView(new WallpaperView(this, wallpaper), new FrameLayout.LayoutParams(-1, -1));
+            page.addView(scroller, new FrameLayout.LayoutParams(-1, -1));
+            setContentView(page);
+        }
 
         IntentFilter f = new IntentFilter();
         f.addAction(Intent.ACTION_PACKAGE_ADDED);
@@ -265,7 +272,7 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() { /* home screen: nothing to go back to */ }
 
-    // Static warm gradient, drawn once by the window: no extra view, no animation.
+    // The original gradient also remains behind an optional wallpaper surface.
     private Drawable background() {
         GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[] {0xFF15100F, 0xFF0A0809, 0xFF050405});
