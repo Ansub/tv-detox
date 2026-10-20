@@ -100,6 +100,9 @@ public class MainActivity extends Activity {
     // and the clock override ("12" or "24"; absent follows the TV).
     private static final String PREF_INPUT_NAMES = "inputnames", PREF_HIDDEN_INPUTS = "hiddeninputs";
     private static final String PREF_CLOCK = "clock", PREF_FAKE_INPUTS = "fakeinputs";
+    // The throwaway input install.sh adds with FAKE_INPUT=1. It has no HDMI port behind it; it is
+    // there so an emulator, which has no inputs of its own, still has a tile to test with.
+    private static final String FAKE_INPUT_PKG = "com.ansub.fakeinput";
     // Names an input can be given with the remote alone: no keyboard, no typing.
     private static final String[] INPUT_PRESETS = {"TV", "PlayStation", "Xbox", "Switch", "Laptop", "PC", "Blu-ray", "Soundbar"};
     // TCL keeps its own Picture and Sound panels in a service; Android's Sound page is missing there.
@@ -265,8 +268,16 @@ public class MainActivity extends Activity {
         // Set only by install.sh's FAKE_INPUT=1, which also installs the throwaway input itself.
         // It is for an emulator, which has no HDMI ports, and never for a real TV.
         if (fake != null) {
-            if (fake.trim().equals("1")) e.putString(PREF_FAKE_INPUTS, "1");
-            else e.remove(PREF_FAKE_INPUTS);
+            if (fake.trim().equals("1")) {
+                e.putString(PREF_FAKE_INPUTS, "1");
+                // An input taken off the home screen stays off, even when FAKE_INPUT=1 adds it back
+                // (undo.sh uninstalls it, but running install.sh again does not). Left alone, the
+                // emulator would come back with no input tile at all, so put the test input back.
+                Set<String> hidden = hiddenInputs();
+                for (java.util.Iterator<String> it = hidden.iterator(); it.hasNext(); )
+                    if (it.next().startsWith(FAKE_INPUT_PKG + "/")) it.remove();
+                e.putString(PREF_HIDDEN_INPUTS, android.text.TextUtils.join("\n", new TreeSet<>(hidden)));
+            } else e.remove(PREF_FAKE_INPUTS);
         }
         e.apply();
         dirty = true;
@@ -522,15 +533,10 @@ public class MainActivity extends Activity {
             }
             if (!ok) return false;
             if (down) {
-<<<<<<< HEAD
-                if (ev.getRepeatCount() == 0) longPressed = false;
-                else if (menu != null && !longPressed && (ev.isLongPress()
-=======
                 if (ev.getRepeatCount() == 0) {
                     longPressed = false;
                     okDownKey = key;
-                } else if (editable && !longPressed && (ev.isLongPress()
->>>>>>> e3b490ff294616803d9c49f601b966ae89427409
+                } else if (menu != null && !longPressed && (ev.isLongPress()
                         || ev.getEventTime() - ev.getDownTime() >= ViewConfiguration.getLongPressTimeout())) {
                     longPressed = true;
                     menu.run();
