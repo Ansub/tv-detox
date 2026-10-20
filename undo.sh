@@ -59,7 +59,8 @@ if [ -n "$failed" ]; then
   echo "Kept this home screen so your TV still has one. Run undo.sh again, or turn the app on with: adb shell pm enable <package>" >&2
   exit 1
 fi
-adb -s "$TV" shell rm -f "$LIST"
+# In the same argument as rm, like the read above: Git Bash on Windows turns an argument that starts with / into a Windows path.
+adb -s "$TV" shell "rm -f $LIST"
 adb -s "$TV" uninstall com.ansub.tvhome >/dev/null 2>&1 || true
 adb -s "$TV" shell input keyevent KEYCODE_HOME
 echo "Removed. Your TV is back to its own home screen."
