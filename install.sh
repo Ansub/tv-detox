@@ -4,6 +4,11 @@
 #   sh install.sh <TV_IP>                          your TV apps, picked for you
 #   sh install.sh <TV_IP> "com.netflix.ninja,com.google.android.youtube.tv"
 #   sh install.sh <TV_IP> "" "bluetooth,sound,picture"   adds settings shortcuts by the clock
+#   sh install.sh <TV_IP> "" "night" 40                  adds the night tile, at that strength
+#
+# "night" is a shortcut that dims the whole TV on and off, for TVs that ignore Android's own
+# brightness setting. The number is how dark, 0 to 100; OK held on the tile changes it later. It needs the overlay permission, which most TVs
+# have no screen for, so this script grants it over adb when the tile is asked for.
 #
 # On Google TV (Chromecast with Google TV and others) the TV's own home screen is left on.
 # GOOGLE_TV=1 turns it off anyway; only do that if you can reconnect over USB or port 5555.
@@ -12,7 +17,7 @@
 set -e
 cd "$(dirname "$0")"
 
-TARGET="$1"; APPS="$2"; QUICK="$3"
+TARGET="$1"; APPS="$2"; QUICK="$3"; NIGHT="$4"
 [ -n "$TARGET" ] || { echo "Usage: sh install.sh <TV_IP> [\"app1,app2,...\"] [\"bluetooth,sound,picture\"]" >&2; exit 1; }
 command -v adb >/dev/null 2>&1 || {
   echo "adb is missing. Install it first:" >&2
@@ -51,11 +56,18 @@ if ! out=$(adb -s "$TV" install -r "$APK" 2>&1); then
   esac
 fi
 
-if [ -n "$APPS" ] || [ -n "$QUICK" ]; then
+# The night tile draws over other apps, which needs a permission with no screen on most TVs.
+case ",$QUICK," in
+  *,night,*) adb -s "$TV" shell appops set com.ansub.tvhome SYSTEM_ALERT_WINDOW allow >/dev/null 2>&1 \
+               || echo "Couldn't grant the overlay permission; the night tile will ask for it on the TV." >&2 ;;
+esac
+
+if [ -n "$APPS" ] || [ -n "$QUICK" ] || [ -n "$NIGHT" ]; then
   # The stamp makes the app apply this list once, even if Android later replays this start.
   set -- --es stamp "$(date +%s)"
   [ -n "$APPS" ] && set -- "$@" --es apps "\"$APPS\""
   [ -n "$QUICK" ] && set -- "$@" --es quick "\"$QUICK\""
+  [ -n "$NIGHT" ] && set -- "$@" --es night "\"$NIGHT\""
   adb -s "$TV" shell am start -n com.ansub.tvhome/.MainActivity "$@" >/dev/null
 fi
 

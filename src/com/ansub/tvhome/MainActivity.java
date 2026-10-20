@@ -64,9 +64,14 @@ public class MainActivity extends Activity {
     // On the TV, hold OK on an app (or press Menu) to move or remove it, or add another; that saves list 1.
     // A network tile always sits at the top right, level with the clock. Settings shortcuts can join
     // it there, off until picked the same way:
-    //   --es quick "bluetooth,sound,picture"
+    //   --es quick "bluetooth,sound,picture,night"
     // (--es quick none  takes them away again; "wifi" and "ethernet" are the network tile now).
-    private static final String PREFS = "config";
+    // "night" dims the whole TV instead of opening a screen. How dark is set once and remembered,
+    // and OK held on the tile picks the level without a reinstall:
+    //   --es night 40   how dark, 0 to 100; --es night off  goes back to the default.
+    // It needs the overlay permission, which has no screen on most TVs, so grant it over adb:
+    //   adb shell appops set com.ansub.tvhome SYSTEM_ALERT_WINDOW allow
+    static final String PREFS = "config";
     private static final List<String> NOT_APPS = Arrays.asList("com.android.vending", "com.android.tv.settings",
             "com.android.tv", "com.google.android.tvlauncher", "com.google.android.apps.tv.launcherx",
             "com.google.android.leanbacklauncher");
@@ -79,9 +84,17 @@ public class MainActivity extends Activity {
 
     // Settings shortcuts: name, label, icon. Tile keys are QUICK + name.
     private static final String QUICK = "quick:";
-    private static final String[] QUICK_NAMES = {"bluetooth", "sound", "picture"};
-    private static final String[] QUICK_LABELS = {"Bluetooth", "Sound", "Picture"};
-    private static final int[][] QUICK_ICONS = {LineIcon.BLUETOOTH, LineIcon.SOUND, LineIcon.PICTURE};
+    private static final String[] QUICK_NAMES = {"bluetooth", "sound", "picture", "night"};
+    private static final String[] QUICK_LABELS = {"Bluetooth", "Sound", "Picture", "Night"};
+    private static final int[][] QUICK_ICONS = {LineIcon.BLUETOOTH, LineIcon.SOUND, LineIcon.PICTURE, LineIcon.MOON};
+
+    // "night" is the one shortcut that does something instead of opening a screen: it turns a dim
+    // over the whole TV on and off (see TintService). Its tile shows a moon while the dim is on
+    // and a sun when it isn't, so the icon says which state the TV is in.
+    static final String NIGHT = "night";
+    static final int DIM_DEFAULT = 40;
+    // Offered when OK is held on the tile.
+    private static final int[] NIGHT_LEVELS = {15, 25, 40, 60, 75, 90};
     private static final String NETWORK = "network";
     private static final int OFFLINE = 0, ETHERNET = 4; // network states; 1 to 3 are Wi-Fi bars
     // TCL keeps its own Picture and Sound panels in a service; Android's Sound page is missing there.
@@ -161,6 +174,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         saveConfig(getIntent());
+        restoreNight();
         loadFonts();
         scale = getResources().getDisplayMetrics().widthPixels / 1920f;
         showWallpaper(wallpaper());
@@ -233,7 +247,8 @@ public class MainActivity extends Activity {
     private boolean saveConfig(Intent intent) {
         String apps = intent == null ? null : intent.getStringExtra("apps");
         String quick = intent == null ? null : intent.getStringExtra("quick");
-        if (apps == null && quick == null) return false;
+        String night = intent == null ? null : intent.getStringExtra("night");
+        if (apps == null && quick == null && night == null) return false;
         SharedPreferences prefs = getSharedPreferences(PREFS, 0);
         String stamp = intent.getStringExtra("stamp");
         if (stamp != null && stamp.equals(prefs.getString("stamp", null))) return false;
@@ -248,6 +263,14 @@ public class MainActivity extends Activity {
             quick = quick.trim();
             if (quick.isEmpty() || quick.equalsIgnoreCase("none")) e.remove("quick");
             else e.putString("quick", quick);
+        }
+        if (night != null) {
+            night = night.trim();
+            if (night.isEmpty() || night.equalsIgnoreCase("off")) e.remove(TintService.EXTRA_DIM);
+            // Anything that isn't a number is left alone, so a typo keeps the level it had.
+            else try {
+                e.putInt(TintService.EXTRA_DIM, Math.max(0, Math.min(100, Integer.parseInt(night))));
+            } catch (NumberFormatException ignored) {}
         }
         e.apply();
         dirty = true;
@@ -278,6 +301,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        // The tint may have been stopped while an app was in front, so put it back here too, not
+        // only on a cold start.
+        restoreNight();
         // Rebuild only when apps were installed, removed or updated.
         if (dirty) {
             dirty = false;
@@ -442,7 +468,14 @@ public class MainActivity extends Activity {
         int qx = getResources().getDisplayMetrics().widthPixels - m + (ib - px(ICON_SIZE)) / 2
                 - (quick.size() + 1) * ib - quick.size() * ig;
         for (int q : quick) {
-            addIcon(QUICK + QUICK_NAMES[q], Strings.t(QUICK_LABELS[q]), new LineIcon(QUICK_ICONS[q]), qx);
+            // Night has two states, so it picks its own icon and label here rather than taking the
+            // single ones in QUICK_ICONS and QUICK_LABELS: a moon while the dim is on, a sun when
+            // it isn't. The tile says what it is doing, not what pressing it would do.
+            boolean isNight = NIGHT.equals(QUICK_NAMES[q]);
+            boolean on = isNight && nightOn();
+            int[] icon = isNight ? (on ? LineIcon.MOON : LineIcon.SUN) : QUICK_ICONS[q];
+            String label = Strings.t(isNight ? (on ? "Night" : "Day") : QUICK_LABELS[q]);
+            addIcon(QUICK + QUICK_NAMES[q], label, new LineIcon(icon), qx);
             qx += ib + ig;
         }
         netIcon = addIcon(NETWORK, Strings.t("Network"), null, qx);
@@ -576,6 +609,11 @@ public class MainActivity extends Activity {
             v.animate().scaleX(has ? 1.1f : 1f).scaleY(has ? 1.1f : 1f).setDuration(140).withLayer().start();
         });
         card.setOnClickListener(v -> open(key));
+        // Holding OK on the night tile picks how dark it goes, the way holding an app opens its menu.
+        if ((QUICK + NIGHT).equals(key)) card.setOnLongClickListener(v -> {
+            showNightLevels(v);
+            return true;
+        });
         FrameLayout wrap = new FrameLayout(this);
         wrap.setClipChildren(false);
         wrap.addView(card, new FrameLayout.LayoutParams(b, b));
@@ -603,7 +641,9 @@ public class MainActivity extends Activity {
             openNetworkSettings();
             return;
         } else if (key.startsWith(QUICK)) {
-            openQuick(key.substring(QUICK.length()));
+            String name = key.substring(QUICK.length());
+            if (NIGHT.equals(name)) toggleNight();
+            else openQuick(name);
             return;
         } else {
             i = launchIntent(getPackageManager(), key);
@@ -652,7 +692,9 @@ public class MainActivity extends Activity {
         if (saved == null) return out;
         for (String name : saved.split("[,\\s]+")) {
             int q = Arrays.asList(QUICK_NAMES).indexOf(name.toLowerCase(java.util.Locale.ROOT));
-            if (q < 0 || out.contains(q) || quickIntents(QUICK_NAMES[q]).isEmpty()) continue;
+            // Night opens no screen, so it is kept whatever this TV has; the rest need somewhere to go.
+            if (q < 0 || out.contains(q)) continue;
+            if (!NIGHT.equals(QUICK_NAMES[q]) && quickIntents(QUICK_NAMES[q]).isEmpty()) continue;
             out.add(q);
         }
         return out;
@@ -736,6 +778,64 @@ public class MainActivity extends Activity {
             if (service ? pm.resolveService(i, 0) != null : i.resolveActivity(pm) != null) out.add(i);
         }
         return out;
+    }
+
+    // Picking a level also turns the dim on, so the choice can be seen while making it. The list
+    // opens on the level already saved, whether the dim is on or off: that is the one the tile would
+    // use next.
+    private void showNightLevels(View anchor) {
+        String[] items = new String[NIGHT_LEVELS.length];
+        int saved = getSharedPreferences(PREFS, 0).getInt(TintService.EXTRA_DIM, DIM_DEFAULT), selected = -1;
+        for (int i = 0; i < NIGHT_LEVELS.length; i++) {
+            items[i] = NIGHT_LEVELS[i] + "%";
+            if (NIGHT_LEVELS[i] == saved) selected = i;  // a level set with --es night may match none
+        }
+        dropdown(anchor, items, selected, which -> {
+            SharedPreferences prefs = getSharedPreferences(PREFS, 0);
+            int dim = NIGHT_LEVELS[which];
+            if (!TintService.apply(this, dim)) {
+                askForOverlay();
+                return;
+            }
+            prefs.edit().putInt(TintService.EXTRA_DIM, dim).putBoolean(NIGHT, true).apply();
+            dirty = true;
+            buildTiles();
+        });
+    }
+
+    private boolean nightOn() {
+        return getSharedPreferences(PREFS, 0).getBoolean(NIGHT, false);
+    }
+
+    // Turns the dim on or off and redraws the tile so its icon matches.
+    // Without the overlay permission nothing can be shown, so it opens that screen instead when the
+    // TV has one; on the TVs that don't, install.sh grants it over adb.
+    private void toggleNight() {
+        SharedPreferences prefs = getSharedPreferences(PREFS, 0);
+        boolean on = !nightOn();
+        if (!TintService.apply(this, on ? prefs.getInt(TintService.EXTRA_DIM, DIM_DEFAULT) : 0)) {
+            askForOverlay();
+            return;
+        }
+        prefs.edit().putBoolean(NIGHT, on).apply();
+        dirty = true;
+        buildTiles();
+    }
+
+    // Puts the dim back after a restart, since the home screen is what starts at boot.
+    private void restoreNight() {
+        if (!nightOn()) return;
+        SharedPreferences prefs = getSharedPreferences(PREFS, 0);
+        if (!TintService.apply(this, prefs.getInt(TintService.EXTRA_DIM, DIM_DEFAULT)))
+            prefs.edit().putBoolean(NIGHT, false).apply(); // permission gone: the tile shouldn't lie
+    }
+
+    private void askForOverlay() {
+        if (android.os.Build.VERSION.SDK_INT < 23) return;
+        try {
+            startActivity(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName())).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } catch (Exception ignored) {}
     }
 
     // Opens a shortcut's screen: the first one that starts wins.
@@ -836,6 +936,13 @@ public class MainActivity extends Activity {
     // A small menu that drops down under a tile, in the same glass as the tiles. Opens above the
     // tile when there's no room below. Back closes it.
     private void dropdown(View anchor, String[] items, final Pick pick) {
+        dropdown(anchor, items, -1, pick);
+    }
+
+    // selected is the row the list is already on, or -1 for none: it keeps a faint background so it
+    // can be told apart from the focused row, and the list opens on it, so OK without moving changes
+    // nothing.
+    private void dropdown(View anchor, String[] items, int selected, final Pick pick) {
         final Dialog d = new Dialog(this, android.R.style.Theme_Material_Dialog_NoActionBar);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -847,9 +954,11 @@ public class MainActivity extends Activity {
         bg.setStroke(Math.max(1, px(2)), 0x17FFFFFF);
         box.setBackground(bg);
         float widest = 0; // some languages need more room than the tile is wide
+        TextView selectedRow = null;
         for (int i = 0; i < items.length; i++) {
             final int which = i;
-            final TextView t = text(px(26), 0xD9FFFFFF, regular);
+            final boolean isSelected = i == selected;
+            final TextView t = text(px(26), isSelected ? Color.WHITE : 0xD9FFFFFF, regular);
             t.setText(Strings.t(items[i]));
             t.setSingleLine(true);
             t.setGravity(Gravity.CENTER_VERTICAL);
@@ -857,18 +966,19 @@ public class MainActivity extends Activity {
             widest = Math.max(widest, t.getPaint().measureText(t.getText().toString()) + 2 * px(22) + 2 * pad);
             final GradientDrawable focus = new GradientDrawable();
             focus.setCornerRadius(px(RADIUS - pad));
-            focus.setColor(Color.TRANSPARENT);
+            focus.setColor(isSelected ? 0x14FFFFFF : Color.TRANSPARENT);
             t.setBackground(focus);
             t.setFocusable(true);
             t.setOnFocusChangeListener((v, has) -> {
-                focus.setColor(has ? 0x38FFFFFF : Color.TRANSPARENT);
-                t.setTextColor(has ? Color.WHITE : 0xD9FFFFFF);
+                focus.setColor(has ? 0x38FFFFFF : isSelected ? 0x14FFFFFF : Color.TRANSPARENT);
+                t.setTextColor(has || isSelected ? Color.WHITE : 0xD9FFFFFF);
             });
             t.setOnClickListener(v -> {
                 d.dismiss();
                 pick.at(which);
             });
             box.addView(t, new LinearLayout.LayoutParams(-1, rowH));
+            if (isSelected) selectedRow = t;
         }
         d.setContentView(box);
 
@@ -891,6 +1001,7 @@ public class MainActivity extends Activity {
         lp.height = h;
         win.setAttributes(lp);
         d.show();
+        if (selectedRow != null) selectedRow.requestFocus();
     }
 
     // Hold OK (or Menu) on a top-row app: move it, swap it for another, or take it off the home

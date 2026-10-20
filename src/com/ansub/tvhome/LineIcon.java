@@ -30,6 +30,14 @@ final class LineIcon extends Drawable {
             1, 80, 165, 1, 40, 165, 2, 0, 85, 60, 1, 85, 100, 0, 120, 60, 1, 120, 100, 0, 155, 60, 1, 155, 100};
     static final int[] PICTURE ={0, 30, 50, 1, 210, 50, 1, 210, 165, 1, 30, 165, 2, 0, 120, 165, 1, 120, 200,
             0, 80, 200, 1, 160, 200};
+    // Night on: a crescent, two arcs meeting at the tips so it stays a thin outline.
+    // The inner arc's ends sit on the outer one's (169, 189) and (169, 51), so the tips meet.
+    static final int[] MOON = {4, 120, 120, 85, 55, 250, 4, 200, 120, 76, 114, 132};
+    // Night off: a sun, a circle with eight rays.
+    static final int[] SUN = {3, 120, 120, 50, 0, 120, 25, 1, 120, 50, 0, 120, 190, 1, 120, 215,
+            0, 25, 120, 1, 50, 120, 0, 190, 120, 1, 215, 120,
+            0, 53, 53, 1, 70, 70, 0, 170, 170, 1, 187, 187,
+            0, 187, 53, 1, 170, 70, 0, 70, 170, 1, 53, 187};
 
     private final int[] ops;
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
