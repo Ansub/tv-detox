@@ -2,9 +2,7 @@
 
 # TV Detox (Brasil) 🇧🇷
 
-### Deixe sua Android TV antiga rápida de novo com Claude Code, Codex, ChatGPT ou Gemini.
-
-Uma tela inicial minúscula, sem anúncios, sem rastreadores, mais o prompt pronto para fazer a limpeza.
+### Deixe sua Android TV (ou TV Box, Mi Box etc) antiga rápida de novo com Claude Code, Codex ou Antigravity: uma tela inicial minúscula e sem anúncios, mais o prompt para fazer a limpeza.
 
 [![Release](https://img.shields.io/github/v/release/Ansub/tv-detox?color=black)](https://github.com/Ansub/tv-detox/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
@@ -32,7 +30,7 @@ Uma tela inicial minúscula, sem anúncios, sem rastreadores, mais o prompt pron
 4. Verifique o endereço IP da TV em **Configurações → Rede e Internet** (ou **Status**).
 
 ### 2. No seu computador (na mesma rede Wi-Fi da TV)
-Abra a sua ferramenta de IA favorita ([Claude Code](https://claude.com/claude-code), Codex, Gemini CLI ou ChatGPT com acesso a terminal).
+Abra a sua ferramenta de IA favorita (**Antigravity**, [Claude Code](https://claude.com/claude-code), Codex ou Gemini).
 
 ### 3. Cole este Prompt
 
@@ -57,17 +55,10 @@ Minha TV é uma <coloque a marca e modelo, ex: Xiaomi Mi TV Stick, TCL, etc.>.
 
 Se você preferir instalar diretamente pelo Windows sem usar ferramentas de IA:
 
-1. Abra o **PowerShell** na pasta do projeto.
-2. Execute o instalador brasileiro:
-   ```powershell
-   .\instalar.ps1 -IpDaTv "192.168.15.11"
-   ```
-   *(O script baixa o ADB oficial automaticamente se você não tiver, conecta na TV e configura tudo).*
+1. Dê **dois cliques** no arquivo **`iniciar.bat`**.
+2. Digite o IP da sua TV quando solicitado. O script baixa o ADB automaticamente, conecta e faz a configuração completa!
 
-Para reverter ao estado original a qualquer momento:
-```powershell
-.\desfazer.ps1 -IpDaTv "192.168.15.11"
-```
+Para reverter ao estado original a qualquer momento: basta dar dois cliques em **`desfazer.bat`**.
 
 ---
 
