@@ -2,6 +2,8 @@
 
 # TV Detox
 
+**[Join the community →](https://www.skool.com/staffed-claude-code-ai-5304)**
+
 ### Make an old, slow Android TV fast again.
 
 Claude Code or Codex does the work. You just press OK on the remote.
