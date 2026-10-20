@@ -1,11 +1,14 @@
 <div align="center">
 
-# TV Detox (Brasil) 🇧🇷
+# TV Detox
 
 ### Deixe sua Android TV (ou TV Box, Mi Box etc) antiga rápida de novo com Claude Code, Codex ou Antigravity: uma tela inicial minúscula e sem anúncios, mais o prompt para fazer a limpeza.
 
+Claude Code, Codex ou Antigravity faz o trabalho. Você apenas pressiona OK no controle remoto.
+
 [![Release](https://img.shields.io/github/v/release/Ansub/tv-detox?color=black)](https://github.com/Ansub/tv-detox/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
+[![YouTube](https://img.shields.io/badge/YouTube-@ansubkhan-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@ansubkhan)
 
 <img src="docs/home-screen.png" alt="Tela inicial do TV Detox" width="100%">
 
@@ -13,26 +16,27 @@
 
 <table>
 <tr>
-<td width="33%" valign="top"><b>🧹 Remove o lixo</b><br>Bloatware, propagandas, rastreadores e canais patrocinados desativados.</td>
-<td width="33%" valign="top"><b>📺 Tela inicial limpa</b><br>Seus aplicativos favoritos, entradas HDMI e o relógio. Nada além disso.</td>
-<td width="33%" valign="top"><b>↩️ Desfaça a qualquer momento</b><br>Os apps são apenas desativados, nunca apagados. 100% reversível.</td>
+<td width="33%" valign="top"><b>Remove o lixo</b><br>Bloatware, anúncios e linhas patrocinadas removidos.</td>
+<td width="33%" valign="top"><b>Uma tela inicial calma</b><br>Seus aplicativos, suas entradas HDMI e um relógio. Nada mais.</td>
+<td width="33%" valign="top"><b>Desfaça a qualquer momento</b><br>Os apps são desativados, nunca excluídos.</td>
 </tr>
 </table>
 
----
+## Assista em funcionamento
 
-## ⚡ Começando em 3 Passos
+<a href="https://www.youtube.com/watch?v=fP2SGGVsaB0"><img src="https://img.youtube.com/vi/fP2SGGVsaB0/maxresdefault.jpg" alt="Assista: Claude Made My Old Android TV Feel Brand New" width="100%"></a>
 
-### 1. Ative a Depuração na sua TV
-1. Na TV, abra **Configurações** ⚙️ → **Preferências do dispositivo** (ou **Sistema**) → **Sobre**.
-2. Desça até **Número da versão** (ou **Compilação / Build**) e aperte o botão **OK** do controle **7 vezes seguidas** até aparecer *"Você agora é um desenvolvedor"*.
-3. Volte uma tela, entre em **Opções do desenvolvedor** e ative **Depuração USB** (e **Depuração de rede/sem fio**, se houver).
-4. Verifique o endereço IP da TV em **Configurações → Rede e Internet** (ou **Status**).
+**[▶ Claude Made My Old Android TV Feel Brand New](https://www.youtube.com/watch?v=fP2SGGVsaB0)** · a configuração completa em uma TV real, em 4 minutos.
 
-### 2. No seu computador (na mesma rede Wi-Fi da TV)
-Abra a sua ferramenta de IA favorita (**Antigravity**, [Claude Code](https://claude.com/claude-code), Codex ou Gemini).
+## Comece agora
 
-### 3. Cole este Prompt
+**1. Ative o modo de desenvolvedor na TV.**
+Configurações → Preferências do dispositivo (ou Sistema) → Sobre → pressione **Número da versão** 7 vezes. Em seguida, ative a **Depuração USB** nas **Opções do desenvolvedor**. [Precisa de ajuda?](#ajuda)
+
+**2. Abra o Claude Code, Codex ou Antigravity no seu computador.**
+O computador e a TV devem estar na mesma rede Wi-Fi.
+
+**3. Cole este texto.**
 
 ```text
 Ajude-me a limpar minha Android TV e deixá-la mais rápida.
@@ -49,74 +53,189 @@ Minha TV é uma <coloque a marca e modelo, ex: Xiaomi Mi TV Stick, TCL, etc.>.
 7. Aguarde 30 segundos após a última alteração para o Android salvar o estado, reinicie a TV uma vez e confirme se ela ligou normalmente antes de finalizar. Mostre-me a memória RAM livre antes e depois.
 ```
 
----
+Pronto. O assistente perguntará antes de cada alteração.
 
-## 💻 Para quem usa Windows (Instalação Direta sem IA)
+> [!NOTE]
+> Este procedimento funcionou para os autores, mas não constitui conselho profissional. Use por sua conta e risco. Você é responsável por sua própria TV.
 
-Se você preferir instalar diretamente pelo Windows sem usar ferramentas de IA:
-
-1. Dê **dois cliques** no arquivo **`iniciar.bat`**.
-2. Digite o IP da sua TV quando solicitado. O script baixa o ADB automaticamente, conecta e faz a configuração completa!
-
-Para reverter ao estado original a qualquer momento: basta dar dois cliques em **`desfazer.bat`**.
-
----
-
-## 📱 Aplicativos Populares no Brasil (`apps.pt-BR.txt`)
-
-O arquivo [`apps.pt-BR.txt`](apps.pt-BR.txt) já vem configurado com os serviços de streaming e utilitários mais usados no Brasil:
-* YouTube (`com.google.android.youtube.tv`)
-* Netflix (`com.netflix.ninja`)
-* Prime Video (`com.amazon.amazonvideo.livingroom`)
-* Globoplay (`com.globo.globotv`)
-* Disney+ (`com.disney.disneyplus`)
-* Max (`com.wbd.stream`)
-* Crunchyroll (`com.crunchyroll.crunchyroid`)
-* Pluto TV (`tv.pluto.android`)
-* Claro tv+ (`br.com.claro.clarotv`)
-* Vivo Play (`com.telefonica.brasil.vivoplay.tv`)
-* Toku+ (`com.tv.tokuplus`)
-* Spotify e Deezer
-
-> *Nota: Os aplicativos que você não tiver instalados na sua TV são simplesmente ignorados pela tela inicial.*
-
----
-
-## ❓ Dúvidas Frequentes
+## Ajuda
 
 <details>
-<summary><b>Funciona em quais marcas de TV no Brasil?</b></summary>
+<summary><b>Como ativar o modo de desenvolvedor?</b></summary>
 <br>
 
-Funciona em qualquer aparelho com **Android TV** ou **Google TV**:
-- **Xiaomi:** Mi TV Stick, Mi Box S, TV Stick 4K
-- **TCL / Semp:** Modelos com Android TV ou Google TV
-- **Chromecast:** Chromecast com Google TV (HD e 4K)
-- **Philips, Philco, AOC, Multilaser:** Modelos que rodam Android TV
-- **Fire TV Stick (Amazon):** É possível fazer a limpeza de bloatware e ganho de memória, mas a Amazon bloqueia a troca da tela inicial padrão.
+1. Na TV, abra **Configurações**, depois **Preferências do dispositivo** (ou **Sistema**), depois **Sobre**.
+2. Pressione OK em **Número da versão** (ou **Compilação / Build**) 7 vezes até ver a mensagem "Você agora é um desenvolvedor".
+3. Volte uma tela, abra **Opções do desenvolvedor** e ative **Depuração USB**. Se houver a opção **Depuração de rede** ou **Depuração sem fio**, ative-a também.
+4. Na primeira vez em que seu computador se conectar, a TV perguntará "Permitir depuração USB?". Marque "Sempre permitir" e selecione **Permitir**.
 
-*(Não funciona em TVs Samsung com Tizen, nem LG com webOS ou aparelhos Roku, pois utilizam sistemas proprietários que não aceitam ADB).*
+Os menus podem variar um pouco por fabricante. Se tiver dúvidas, pergunte ao Claude, Codex ou Antigravity: *"Tenho uma TV \<marca e modelo\>. Como você pode se conectar a ela pelo meu computador?"*
+
 </details>
 
 <details>
-<summary><b>Como reverter tudo se eu não gostar?</b></summary>
+<summary><b>Em quais TVs funciona?</b></summary>
 <br>
 
-Todos os aplicativos desativados são salvos em uma lista interna na própria TV. Para restaurar:
-* **No Linux/Mac:** `sh undo.sh <IP_DA_TV>`
-* **No Windows:** `.\desfazer.ps1 -IpDaTv <IP_DA_TV>`
-* Ou via comando direto: `adb shell pm enable <nome-do-pacote>`
+Android TV 9, 11 e 12, e Google TV 14. Todas as alterações são testadas em emuladores e aparelhos reais.
+
+</details>
+
+<details>
+<summary><b>Posso fazer isso em um Fire TV, Roku, Samsung ou LG?</b></summary>
+<br>
+
+- **Amazon Fire TV:** parcialmente. O Fire TV roda Android por baixo, então a limpeza de apps funciona. A Amazon bloqueia a alteração da tela inicial padrão nos aparelhos atuais, portanto a tela da Amazon é mantida.
+- **Roku:** não. O Roku utiliza sistema operacional próprio, não Android, sem suporte a conexões de depuração para desativação de apps.
+- **Samsung (Tizen):** não, pelo mesmo motivo.
+- **LG (webOS):** não. Você ainda pode reduzir anúncios desativando as opções de recomendação e promoção nas configurações da TV.
+
+Se sua TV ou TV box roda Android TV ou Google TV, o procedimento funciona. Isso inclui modelos da Sony, TCL, Semp, Xiaomi, Philips, Philco, AOC, Chromecast com Google TV e Nvidia Shield.
+
+</details>
+
+<details>
+<summary><b>E em projetores ou celulares Android?</b></summary>
+<br>
+
+- **Projetores com Android:** geralmente sim, desde que possuam Opções do desenvolvedor e Depuração USB.
+- **Celulares Android:** apenas a limpeza de aplicativos. A tela inicial foi desenhada exclusivamente para navegação por controle remoto de TV.
+
+</details>
+
+<details>
+<summary><b>Algum cuidado no Chromecast com Google TV?</b></summary>
+<br>
+
+Ele roda o mesmo Google TV testado no projeto. Dois detalhes observados:
+- O botão dedicado de YouTube do controle remoto pode ser afetado se o launcher original for desativado. Abra o YouTube pelo bloco da tela inicial.
+- O Google TV pode tentar reativar sua própria tela inicial após atualizações do sistema. Se ocorrer, execute o script novamente.
+
+</details>
+
+<details>
+<summary><b>O botão Home abre a tela de configuração do Google TV (Sony BRAVIA e outros)</b></summary>
+<br>
+
+Em algumas TVs com Google TV, após o launcher original (`com.google.android.apps.tv.launcherx`) ser desativado, o Android direciona o botão Home para o aplicativo de configuração (`com.google.android.tungsten.setupwraith`). O script `install.sh` detecta essa situação e pergunta se você deseja desativá-lo. `undo.sh` o reativa caso necessário.
+
+Para reativar manualmente:
+
+```sh
+adb shell pm enable com.google.android.tungsten.setupwraith
+adb shell pm enable com.google.android.apps.tv.launcherx
+```
+
+</details>
+
+<details>
+<summary><b>O assistente de IA diz que não consegue alcançar minha TV</b></summary>
+<br>
+
+A interface de chat via navegador roda em servidores remotos, não no seu computador local, e por isso não tem acesso aos dispositivos da sua rede Wi-Fi. É necessário utilizar uma ferramenta que execute localmente no terminal: Claude Code, Codex ou Antigravity.
+
+Caso prefira não usar IA, utilize os scripts diretos (`install.sh` no Linux/Mac ou `iniciar.bat` no Windows).
+
+</details>
+
+<details>
+<summary><b>Posso instalar a tela inicial sem IA?</b></summary>
+<br>
+
+Sim. Você só precisa do `adb`.
+
+- **No Windows:** dê dois cliques em `iniciar.bat` (ou execute `install.bat` / `install.ps1`). O script baixa o ADB oficial automaticamente e conduz a instalação.
+- **No Mac:** instale com `brew install android-platform-tools`.
+- **No Linux:** instale o pacote `adb` da sua distribuição.
+
+Em seguida, no terminal:
+
+```sh
+sh install.sh <IP_DA_TV>
+sh install.sh <IP_DA_TV> "com.netflix.ninja,com.google.android.youtube.tv,com.globo.globotv"
+sh install.sh <IP_DA_TV> "" "bluetooth,sound,picture"
+```
+
+Para desfazer:
+- **No Windows:** dê dois cliques em `desfazer.bat` (ou execute `undo.bat`).
+- **No Mac/Linux:** execute `sh undo.sh <IP_DA_TV>`.
+
+</details>
+
+<details>
+<summary><b>Como alterar os aplicativos na tela inicial?</b></summary>
+<br>
+
+Pelo próprio controle remoto da TV. Segure o botão **OK** sobre um aplicativo (ou pressione a tecla **Menu**) para:
+
+- **Mover:** use as setas para deslizar o app até a nova posição e pressione **OK**.
+- **Substituir:** escolha outro aplicativo instalado para ocupar aquele espaço.
+- **Remover do início:** remove o atalho da tela inicial. O app continua instalado na TV.
+- **Desinstalar:** disponível para aplicativos que você mesmo instalou.
+- **Informações do app:** para aplicativos de fábrica do sistema.
+
+Para adicionar novos aplicativos, selecione o bloco **Adicionar app** na linha inferior.
+
 </details>
 
 <details>
 <summary><b>Minha antena de TV aberta continuará funcionando?</b></summary>
 <br>
 
-**Sim!** O guia e os scripts protegem expressamente os drivers do processador e sintonizadores de TV (`com.android.providers.tv`, `*.tvinput*`, etc.), garantindo que seus canais abertos e entradas HDMI continuem intactos.
+Sim. As entradas HDMI, sintonizadores digitais de TV aberta (DTV) e componentes de hardware são expressamente preservados e mantidos intactos.
+
 </details>
+
+<details>
+<summary><b>Como desfazer tudo?</b></summary>
+<br>
+
+- **No Windows:** execute `desfazer.bat`.
+- **No Mac/Linux:** execute `sh undo.sh <IP_DA_TV>`.
+
+O script reativa todos os aplicativos registrados em `/data/local/tmp/tvhome-disabled.txt` e desinstala o TV Detox, retornando à tela inicial de fábrica.
+
+</details>
+
+<details>
+<summary><b>Minha TV ficou reiniciando em loop</b></summary>
+<br>
+
+O computador frequentemente consegue se conectar via ADB por alguns segundos durante o início do boot. Use esse intervalo para reativar os pacotes:
+
+```sh
+adb connect <IP_DA_TV>
+adb wait-for-device
+for p in $(adb shell pm list packages -d | tr -d '\r' | sed 's/package://'); do adb shell pm enable "$p"; done
+```
+
+Para remover apenas a tela inicial, execute `sh undo.sh <IP_DA_TV>`. Se o computador não conectar, utilize o modo de recuperação (recovery) ou restauração de fábrica da sua TV.
+
+</details>
+
+<details>
+<summary><b>Para desenvolvedores: compile você mesmo</b></summary>
+<br>
+
+1. Defina seus aplicativos padrão em `apps.txt` (ou utilize a lista brasileira em `apps.pt-BR.txt`).
+2. Instale o Java 17 e o Android SDK.
+3. Execute `sh build.sh` e depois `sh install.sh <IP_DA_TV>`.
+4. Execute `sh ci/smoke-test.sh <IP_DA_TV>` para validação de testes.
+
+O projeto consiste em uma única tela em Java puro, sem bibliotecas pesadas nem Gradle, consumindo cerca de 30 MB de memória RAM.
+
+</details>
+
+## Contribuindo
+
+Pull requests são bem-vindos para correções que mantenham o funcionamento em todas as marcas de TV. O projeto utiliza apenas aplicativos oficiais e configurações nativas do Android.
 
 ---
 
-## 📄 Licença
+<div align="center">
 
-Distribuído sob a licença [MIT](LICENSE). Baseado no projeto original [Ansub/tv-detox](https://github.com/Ansub/tv-detox).
+Criado por **Ansub Khan**. Adaptado para o público brasileiro.
+
+<sub>Licença MIT</sub>
+
+</div>

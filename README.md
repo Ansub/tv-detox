@@ -11,7 +11,7 @@ Claude Code, Codex or Antigravity does the work. You just press OK on the remote
 [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 [![YouTube](https://img.shields.io/badge/YouTube-@ansubkhan-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@ansubkhan)
 
-🌐 **Translations:** [🇧🇷 Português do Brasil](README.pt-BR.md)
+**Translations:** [Português do Brasil](README.pt-BR.md)
 
 <img src="docs/home-screen.png" alt="The TV Detox home screen" width="100%">
 
