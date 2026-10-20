@@ -2,7 +2,7 @@
 
 # TV Detox
 
-**[Join the community →](https://www.skool.com/staffed-claude-code-ai-5304)**
+<a href="https://www.skool.com/staffed-claude-code-ai-5304"><img src="https://img.shields.io/badge/Join_the_community_%E2%86%92-D97757?style=for-the-badge" alt="Join the community" height="44"></a>
 
 ### Make an old, slow Android TV fast again.
 
