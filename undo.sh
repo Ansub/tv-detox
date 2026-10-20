@@ -60,6 +60,8 @@ if [ -n "$failed" ]; then
   exit 1
 fi
 adb -s "$TV" shell rm -f "$LIST"
+# The throwaway input install.sh can add with FAKE_INPUT=1 (testing on an emulator).
+adb -s "$TV" uninstall com.ansub.fakeinput >/dev/null 2>&1 || true
 adb -s "$TV" uninstall com.ansub.tvhome >/dev/null 2>&1 || true
 adb -s "$TV" shell input keyevent KEYCODE_HOME
 echo "Removed. Your TV is back to its own home screen."
