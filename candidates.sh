@@ -70,13 +70,14 @@ com.google.android.tv.assistant com.google.android.marvin.talkback
 com.google.android.tv.remote.service com.google.android.tts
 com.google.android.syncadapters.contacts com.google.android.syncadapters.calendar
 com.ansub.tvhome com.google.android.webview com.tcl.android.webview
-com.tcl.tv com.tcl.micmanager"
+com.tcl.tv com.tcl.micmanager
+com.android.dreams.basic com.google.android.apps.tv.dreamx"
 
 # Commonly preinstalled junk: ads, sponsored rows, unused vendor and Google apps.
 SAFE="com.google.android.tvrecommendations com.google.android.backdrop
 com.google.android.videos com.google.android.youtube.tvmusic com.google.android.play.games
 com.google.android.feedback
-com.android.printspooler com.android.dreams.basic com.android.htmlviewer com.android.soundpicker
+com.android.printspooler com.android.htmlviewer com.android.soundpicker
 com.tcl.waterfall.overseas com.tcl.esticker com.tcl.partnercustomizer
 com.tcl.messagebox com.tcl.smartalexa com.tcl.copydatatotv com.tcl.audioplayer
 com.tcl.imageplayer com.tcl.keyhelp com.tcl.usercenter
@@ -132,6 +133,7 @@ com.google.android.syncadapters.contacts	Contacts sync
 com.google.android.syncadapters.calendar	Calendar sync
 com.android.printspooler	Printing
 com.android.dreams.basic	Basic screensaver
+com.google.android.apps.tv.dreamx	Google TV screensaver
 com.android.htmlviewer	HTML file viewer
 com.netflix.ninja	Netflix
 com.amazon.amazonvideo.livingroom	Prime Video

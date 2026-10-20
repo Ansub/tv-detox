@@ -43,6 +43,9 @@ Claude Code or Codex does the work. You just press OK on the remote.
 > [!WARNING]
 > **Google TV and Chromecast with Google TV:** don't turn off the TV's own home screen. On some of these devices that left them stuck restarting, and the only fix was a factory reset. Since v1.4.1, `install.sh` leaves it on for Google TV unless you opt in with `GOOGLE_TV=1`. The cleanup still works and makes the TV faster. You just keep Google TV's own home screen.
 
+> [!WARNING]
+> **OLED TVs:** keep the screensaver on. It stops a still picture from burning into the screen. Don't leave any home screen, this one included, on for hours.
+
 **1. Turn on developer mode on the TV.**
 Settings → Device Preferences → About → press **Build** 7 times. Then turn on **USB debugging** in **Developer options**. [Stuck?](#help)
 
@@ -74,8 +77,10 @@ My TV is a <brand and model>.
 5. Install the home screen: download
    https://github.com/Ansub/tv-detox and run its
    install.sh with my TV and these apps: <your apps>.
-6. Turn off animations and the screensaver, and make the TV
-   sleep after 5 minutes.
+6. Turn off animations and make the TV sleep after 5
+   minutes. Then check the model name and ask me if the TV
+   is OLED. Keep the screensaver on unless I say it's not
+   OLED.
 7. Wait 30 seconds after the last change, then restart the
    TV once and check it starts up normally before you say
    you're done. Show me free memory before
@@ -200,7 +205,7 @@ Tested on a TCL Smart TV Pro (Google TV, Android 14, 2.3 GB of RAM). Every step 
 | Photo viewer, USB media player | `com.tcl.gallery`, `com.tcl.ui_mediaCenter` |
 | App manager | `com.tcl.guard` |
 | Bluetooth "listen alone" | `com.tcl.t_solo` |
-| Google TV's screensaver (about 200 MB) | `com.google.android.apps.tv.dreamx` |
+| Google TV's screensaver (about 200 MB, keep it on an OLED TV) | `com.google.android.apps.tv.dreamx` |
 
 **Tiles that stay after the cleanup.** Two TCL tiles can still show up on this home screen. **TCL Channel** is `com.tcl.partnercustomizer`, which also handles the TCL button on the remote. **TCL Home** is `com.tcl.dashboard`, TCL's quick settings panel. Both turned off without trouble.
 

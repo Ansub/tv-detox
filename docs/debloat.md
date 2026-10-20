@@ -122,7 +122,7 @@ Ads and sponsored rows, unused Google apps, vendor filler and serial port relics
 | `com.tcl.dashboard`, `com.tcl.messagebox` | TCL panels and popups |
 | `com.tcl.copydatatotv`, `com.tcl.audioplayer`, `com.tcl.imageplayer`, `com.tcl.videoplayer` | TCL media helpers |
 | `com.tcl.usercenter`, `com.tcl.keyhelp` | TCL account and help |
-| `com.android.printspooler`, `com.android.dreams.basic`, `com.android.htmlviewer` | Android spare parts |
+| `com.android.printspooler`, `com.android.htmlviewer` | Android spare parts |
 
 ### Depends on you
 
@@ -137,6 +137,7 @@ Turn these off only if you do not use the feature:
 | `com.google.android.tv.remote.service` | remote control from your phone |
 | `com.google.android.tts` | text to speech |
 | `com.tcl.tv` | Live TV, antenna and cable channels |
+| `com.android.dreams.basic`, `com.google.android.apps.tv.dreamx` | the screensaver. Keep it on an OLED TV, it prevents burn-in |
 
 Vendors rename and add to these lists, so treat them as strong hints, not gospel. When in
 doubt, leave it on: a slow TV is better than a TV you cannot use.
