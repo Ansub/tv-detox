@@ -204,6 +204,12 @@ fi
 # TVs never get past the logo (#14, #16). So turn it all back on before leaving.
 reverted=
 winner=$(current_home)
+# No answer at all means the TV is gone (over Wireless debugging the connection can drop once the
+# setup app is off), not that Home opens something else. Say so, instead of a Home that wasn't checked.
+[ -n "$winner" ] || [ "$(adb -s "$TV" get-state 2>/dev/null)" = device ] || {
+  echo "Lost the connection to $TV before it could be checked that Home opens this home screen." >&2
+  echo "Reconnect over USB or port 5555 and run install.sh again. If the TV is stuck, undo.sh turns everything back on." >&2
+  exit 1; }
 if [ -n "$turned_off" ] && [ "$winner" != "$ME" ]; then
   revert_failed=
   for p in $turned_off; do

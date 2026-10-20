@@ -129,6 +129,9 @@ public class MainActivity extends Activity {
     private String movingKey;   // the app being moved with left/right, if any
     private TextView moveHint;  // shown above the apps while moving
     private boolean longPressed; // OK was held: swallow the key-up so the app doesn't open
+    // The tile OK went down on. An app that closes on OK's key-down (Netflix's "Exit") hands the matching
+    // key-up to the tile still focused here, so a key-up only opens the app it went down on (#30).
+    private String okDownKey;
 
     // Apps installed, removed or updated. This often lands once Home is already back in front (an app
     // uninstalled from the menu is gone only after Android's prompt has closed), so catch up then.
@@ -309,6 +312,7 @@ public class MainActivity extends Activity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) refreshApps();
+        else okDownKey = null; // an OK still held finishes in the window that took over
     }
 
     // Rebuilds the tiles if apps changed, but only while Home is in front with no menu open and no
@@ -518,14 +522,25 @@ public class MainActivity extends Activity {
             }
             if (!ok) return false;
             if (down) {
+<<<<<<< HEAD
                 if (ev.getRepeatCount() == 0) longPressed = false;
                 else if (menu != null && !longPressed && (ev.isLongPress()
+=======
+                if (ev.getRepeatCount() == 0) {
+                    longPressed = false;
+                    okDownKey = key;
+                } else if (editable && !longPressed && (ev.isLongPress()
+>>>>>>> e3b490ff294616803d9c49f601b966ae89427409
                         || ev.getEventTime() - ev.getDownTime() >= ViewConfiguration.getLongPressTimeout())) {
                     longPressed = true;
                     menu.run();
                 }
-            } else if (!longPressed) {
-                open(key);
+            } else {
+                // Only the key-up of an OK that went down on this tile opens the app, and not a cancelled
+                // one (focus left while OK was held). View does the same for a click with isPressed().
+                boolean pressed = key.equals(okDownKey) && !ev.isCanceled();
+                okDownKey = null;
+                if (pressed && !longPressed) open(key);
             }
             return true;
         });
