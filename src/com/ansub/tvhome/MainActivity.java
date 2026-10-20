@@ -106,6 +106,9 @@ public class MainActivity extends Activity {
     private String movingKey;   // the app being moved with left/right, if any
     private TextView moveHint;  // shown above the apps while moving
     private boolean longPressed; // OK was held: swallow the key-up so the app doesn't open
+    // The tile OK went down on. Only its own key-up opens the app: an app that closes on OK's key-down
+    // (like Netflix's "Exit") would otherwise hand the key-up to us and get opened again (issue #30).
+    private String okDownKey;
 
     // Apps installed, removed or updated. This often lands once Home is already back in front (an app
     // uninstalled from the menu is gone only after Android's prompt has closed), so catch up then.
@@ -250,6 +253,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        okDownKey = null; // a key-up still on its way from the app we come back from isn't ours
         // Rebuild only when apps were installed, removed or updated.
         if (dirty) {
             dirty = false;
@@ -460,14 +464,18 @@ public class MainActivity extends Activity {
             }
             if (!ok) return false;
             if (down) {
-                if (ev.getRepeatCount() == 0) longPressed = false;
-                else if (editable && !longPressed && (ev.isLongPress()
+                if (ev.getRepeatCount() == 0) {
+                    longPressed = false;
+                    okDownKey = key;
+                } else if (editable && !longPressed && (ev.isLongPress()
                         || ev.getEventTime() - ev.getDownTime() >= ViewConfiguration.getLongPressTimeout())) {
                     longPressed = true;
                     showEditMenu(key);
                 }
-            } else if (!longPressed) {
-                open(key);
+            } else {
+                boolean mine = key.equals(okDownKey);
+                okDownKey = null;
+                if (mine && !longPressed) open(key);
             }
             return true;
         });
