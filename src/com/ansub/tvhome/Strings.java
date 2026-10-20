@@ -121,7 +121,9 @@ final class Strings {
         String[] table = LANGS.get(key);
         if (table == null) table = LANGS.get(l.getLanguage());
         if (table == null) return en;
-        for (int i = 0; i < EN.length; i++) if (EN[i].equals(en)) return table[i];
+        // A label added to EN but not yet to this table falls back to English.
+        for (int i = 0; i < EN.length; i++)
+            if (EN[i].equals(en)) return i < table.length ? table[i] : en;
         return en;
     }
 
