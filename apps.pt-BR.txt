@@ -1,0 +1,18 @@
+# Aplicativos na linha superior da sua tela inicial, em ordem de preferência.
+# Um nome de pacote (package name) por linha.
+# Aplicativos que não estiverem instalados na TV são ignorados automaticamente.
+# Dúvida sobre o nome do pacote de algum app? Pergunte à IA: "Qual o nome do pacote do <app> na minha TV?"
+
+com.google.android.youtube.tv
+com.netflix.ninja
+com.amazon.amazonvideo.livingroom
+com.globo.globotv
+com.disney.disneyplus
+com.wbd.stream
+com.crunchyroll.crunchyroid
+tv.pluto.android
+br.com.claro.clarotv
+com.telefonica.brasil.vivoplay.tv
+com.tv.tokuplus
+com.spotify.tv.android
+com.deezer.android.tv
