@@ -40,7 +40,8 @@ ME=com.ansub.tvhome/.MainActivity
 home() { sh_tv cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -1; }
 echo "Home screen"
 # The TV's own launchers first: while one is on, Home can't be fixed.
-turned_off=$(sh_tv cat /data/local/tmp/tvhome-disabled.txt 2>/dev/null | sort -u)
+# In the same argument as cat: Git Bash on Windows turns an argument that starts with / into a Windows path.
+turned_off=$(sh_tv "cat /data/local/tmp/tvhome-disabled.txt" 2>/dev/null | sort -u)
 for p in $turned_off; do
   check "$p stays off" "is_off $p" "sh_tv pm disable-user --user 0 $p"
 done
