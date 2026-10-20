@@ -13,13 +13,6 @@ Claude Code or Codex does the work. You just press OK on the remote.
 [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 [![YouTube](https://img.shields.io/badge/YouTube-@ansubkhan-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@ansubkhan)
 
-**As seen on**
-
-[![The Verge](https://img.shields.io/badge/The_Verge-5200FF?style=for-the-badge)](https://www.theverge.com/ai-artificial-intelligence/1013505/maybe-claude-make-your-android-tv-less-crappy-too)
-[![Android Authority](https://img.shields.io/badge/Android_Authority-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.androidauthority.com/android-tv-vibe-hacking-remove-ads-bloatware-3725338/)
-[![Mashable](https://img.shields.io/badge/Mashable-00AEEF?style=for-the-badge)](https://mashable.com/tech/smart-tv-ads-claude-code-ai-cleanup)
-[![t3n](https://img.shields.io/badge/t3n-E6007E?style=for-the-badge)](https://t3n.de/news/claude-alter-fernseher-android-tv-1768831/)
-
 <img src="docs/home-screen.png" alt="The TV Detox home screen" width="100%">
 
 </div>
@@ -276,7 +269,15 @@ Yes. Leave out step 5 of the prompt ("Install the home screen"). Your TV looks t
 <summary><b>How do I know which apps are safe to turn off?</b></summary>
 <br>
 
-Run the planner. It reads the TV and prints every app with a verdict, changing nothing:
+First, optionally, check the TV itself:
+
+```sh
+sh supports.sh <TV_IP>
+```
+
+It prints what the TV is (make, model, Android version, RAM), which home screens can take over, how many apps are already turned off, and whether swapping the home screen is a good idea on that set. It changes nothing.
+
+Then run the planner. It reads the TV and prints every app with a verdict, changing nothing:
 
 ```sh
 sh candidates.sh <TV_IP>
@@ -358,13 +359,7 @@ Use the remote. Hold **OK** on an app (or press **Menu**) to:
 
 To add an app, pick the **Add app** tile in the bottom row. Add as many apps as you like: they wrap into rows of six, and the page scrolls once there are more than twelve. Your changes are kept until you run `install.sh` with a new app list.
 
-</details>
-
-<details>
-<summary><b>Can I change the background?</b></summary>
-<br>
-
-Yes. Pick the **Settings** tile, then **Wallpaper**. (**TV settings**, right under it, opens the TV's own settings.) There are fourteen gradients. Dark: Dusk (the default), Midnight, Plum, Forest, Graphite, Ocean and Ember. Bright: Sunset, Lagoon, Aurora, Coral, Iris, Meadow and Gold. The background changes as you move through the list; press **OK** to keep one, or **Back** to leave it as it was. They're colours only, no pictures, so every one is just as fast and uses the same memory.
+HDMI tiles work the same way. Hold **OK** on one to **Rename** it — TV, PlayStation, Xbox, Switch, Laptop, PC, Blu-ray, Soundbar — or **Remove** it from the home screen. A removed input comes back by holding **OK** on the **Add app** tile. This only changes this home screen; the TV's own input names stay as they are.
 
 </details>
 
@@ -432,6 +427,8 @@ If the laptop never connects, use the TV's recovery mode or a factory reset. How
    ```
 3. `sh build.sh`, then `sh install.sh <TV_IP>` installs your build instead of the release.
 4. `sh ci/smoke-test.sh <TV_IP or emulator>` checks it all works.
+5. `CLOCK=24 sh install.sh <TV_IP>` sets a 24-hour clock (or `CLOCK=12` for a 12-hour one, `CLOCK=auto` to follow the TV again). On the TV, holding OK on an HDMI tile renames or removes that input.
+6. Testing the input tiles on an emulator, which has no HDMI ports: `FAKE_INPUT=1 sh install.sh <emulator>`. That builds and installs `ci/fake-input` (a TV input service with no hardware behind it) and tells the home screen to show it. `undo.sh` removes it again. It is for emulators only.
 
 HDMI inputs are found on their own. The labels follow the TV's language, with 16 languages built in. To add yours or fix a translation, edit `src/com/ansub/tvhome/Strings.java`. Keep `key.jks`, which is made on your first build: updates must be signed with the same key.
 

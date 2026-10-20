@@ -1,0 +1,20 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.ansub.fakeinput" android:versionCode="1" android:versionName="1.0">
+    <uses-sdk android:minSdkVersion="21" android:targetSdkVersion="34" />
+
+    <!-- For testing only: a TV input service, so an emulator with no HDMI inputs still has one
+         for the launcher to draw. BIND_TV_INPUT is held by the system, which binds the service. -->
+    <application android:label="Fake input">
+        <!-- The label on the service is the one the launcher shows on the tile: a custom input's
+             label comes from here, not from res/xml/tv_input.xml. -->
+        <service android:name=".FakeInputService"
+            android:label="Fake HDMI"
+            android:permission="android.permission.BIND_TV_INPUT"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.tv.TvInputService" />
+            </intent-filter>
+            <meta-data android:name="android.media.tv.input" android:resource="@xml/tv_input" />
+        </service>
+    </application>
+</manifest>

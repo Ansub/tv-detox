@@ -45,14 +45,8 @@ turned_off=$(sh_tv "cat /data/local/tmp/tvhome-disabled.txt" 2>/dev/null | sort 
 for p in $turned_off; do
   check "$p stays off" "is_off $p" "sh_tv pm disable-user --user 0 $p"
 done
-# On Google TV, install.sh keeps Google TV's home screen on unless GOOGLE_TV=1, so Home opening it is expected.
-LAUNCHERX=com.google.android.apps.tv.launcherx
-if [ "$(home)" != "$ME" ] && installed $LAUNCHERX && ! is_off $LAUNCHERX && ! echo "$turned_off" | grep -qx $LAUNCHERX; then
-  echo "  ok    Home opens Google TV's home screen (kept on, as install.sh said; GOOGLE_TV=1 turns it off)"
-else
-  check "Home opens this home screen" '[ "$(home)" = "$ME" ]' \
-    'sh_tv cmd role add-role-holder --user 0 android.app.role.HOME com.ansub.tvhome; sh_tv cmd package set-home-activity "$ME"'
-fi
+check "Home opens this home screen" '[ "$(home)" = "$ME" ]' \
+  'sh_tv cmd role add-role-holder --user 0 android.app.role.HOME com.ansub.tvhome; sh_tv cmd package set-home-activity "$ME"'
 
 if [ -n "$LIST" ]; then
   echo "Your changes ($LIST)"
