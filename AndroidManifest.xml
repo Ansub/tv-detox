@@ -27,6 +27,11 @@
     </queries>
     <!-- Lets "Uninstall" in the app menu open Android's uninstall prompt. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!-- Wallpapers: free photos online (Pexels or Lorem Picsum), and pictures on the TV or a USB drive.
+         Android asks before the home screen can see pictures, the first time that page is opened. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <application android:label="Home" android:allowBackup="false"
@@ -43,5 +48,9 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <activity android:name=".WallpaperActivity"
+            android:exported="false" android:excludeFromRecents="true"
+            android:screenOrientation="landscape" android:windowSoftInputMode="adjustPan|stateHidden"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode" />
     </application>
 </manifest>

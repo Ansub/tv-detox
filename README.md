@@ -270,6 +270,23 @@ Press **Up** from your apps to reach them. A shortcut your TV has no screen for 
 </details>
 
 <details>
+<summary><b>Can I change the background?</b></summary>
+<br>
+
+Yes. Press **Up** from your apps and pick the picture icon next to the clock. You can get a new one from:
+
+- **TV storage & USB**: pictures on the TV or on a USB drive. The first time, Android asks to let Home see your photos. The picture is copied to the TV, so the drive can come out afterwards.
+- **Online photos**: free photos from Unsplash (through Lorem Picsum), no account needed. A free [Pexels key](https://www.pexels.com/api/) adds topics and search. Type it in under **Pexels key**, or send it from your computer:
+
+```sh
+adb shell am start -n com.ansub.tvhome/.MainActivity --es pexels "<your key>"   # "none" takes it away
+```
+
+**Recently used** shows your last ten, with **Original** first to go back to the default. **Downloaded** lists every picture kept on the TV. Hold **OK** on one to delete it. The home screen only goes online while Online photos is open.
+
+</details>
+
+<details>
 <summary><b>How do I undo it?</b></summary>
 <br>
 

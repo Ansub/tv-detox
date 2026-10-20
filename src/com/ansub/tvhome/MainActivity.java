@@ -66,6 +66,8 @@ public class MainActivity extends Activity {
     // it there, off until picked the same way:
     //   --es quick "bluetooth,sound,picture"
     // (--es quick none  takes them away again; "wifi" and "ethernet" are the network tile now).
+    // A wallpaper icon sits just before the network tile; it opens WallpaperActivity. A Pexels key for
+    // its online photos can be set there, or with  --es pexels "<key>"  (--es pexels none  removes it).
     private static final String PREFS = "config";
     private static final List<String> NOT_APPS = Arrays.asList("com.android.vending", "com.android.tv.settings",
             "com.android.tv", "com.google.android.tvlauncher", "com.google.android.apps.tv.launcherx",
@@ -83,6 +85,7 @@ public class MainActivity extends Activity {
     private static final String[] QUICK_LABELS = {"Bluetooth", "Sound", "Picture"};
     private static final int[][] QUICK_ICONS = {LineIcon.BLUETOOTH, LineIcon.SOUND, LineIcon.PICTURE};
     private static final String NETWORK = "network";
+    private static final String WALLPAPER = "wallpaper";
     private static final int OFFLINE = 0, ETHERNET = 4; // network states; 1 to 3 are Wi-Fi bars
     // TCL keeps its own Picture and Sound panels in a service; Android's Sound page is missing there.
     private static final String TCL_SHOW_WINDOW = "com.tcl.settings.SHOW_WINDOW";
@@ -94,9 +97,10 @@ public class MainActivity extends Activity {
     private static final int ICON_TOP = 76, ICON_BUTTON = 72, ICON_SIZE = 40, ICON_GAP = 12; // level with the date
     private float scale = 1f;
 
-    private static Typeface regular, semibold;
+    static Typeface regular, semibold; // WallpaperActivity uses them too
 
     private FrameLayout root; // the page, inside a vertical scroller
+    private String shownWallpaper; // the wallpaper the window is drawing
     private int tileW, tileH, gridTop; // app grid geometry, set by buildTiles
     private final List<View> tiles = new ArrayList<>();
     private boolean dirty = true;
@@ -130,6 +134,7 @@ public class MainActivity extends Activity {
         saveConfig(getIntent());
         loadFonts();
         scale = getResources().getDisplayMetrics().widthPixels / 1920f;
+        shownWallpaper = Wallpaper.current(this);
         getWindow().setBackgroundDrawable(background());
 
         ScrollView scroller = new ScrollView(this);
@@ -193,14 +198,15 @@ public class MainActivity extends Activity {
         if (saveConfig(intent)) buildTiles();
     }
 
-    // Saves an app list passed with --es apps "..." and shortcuts passed with --es quick "...".
-    // Returns true if it changed.
+    // Saves an app list passed with --es apps "...", shortcuts passed with --es quick "..." and a Pexels
+    // key passed with --es pexels "...". Returns true if it changed.
     // When Android kills the home screen in the background, it can start it again with the same old
     // intent; the stamp install.sh sends stops that from undoing changes made on the TV since.
     private boolean saveConfig(Intent intent) {
         String apps = intent == null ? null : intent.getStringExtra("apps");
         String quick = intent == null ? null : intent.getStringExtra("quick");
-        if (apps == null && quick == null) return false;
+        String pexels = intent == null ? null : intent.getStringExtra("pexels");
+        if (apps == null && quick == null && pexels == null) return false;
         SharedPreferences prefs = getSharedPreferences(PREFS, 0);
         String stamp = intent.getStringExtra("stamp");
         if (stamp != null && stamp.equals(prefs.getString("stamp", null))) return false;
@@ -215,6 +221,11 @@ public class MainActivity extends Activity {
             quick = quick.trim();
             if (quick.isEmpty() || quick.equalsIgnoreCase("none")) e.remove("quick");
             else e.putString("quick", quick);
+        }
+        if (pexels != null) {
+            pexels = pexels.trim();
+            if (pexels.isEmpty() || pexels.equalsIgnoreCase("none")) e.remove(Wallpaper.PEXELS_KEY);
+            else e.putString(Wallpaper.PEXELS_KEY, pexels);
         }
         e.apply();
         dirty = true;
@@ -250,6 +261,12 @@ public class MainActivity extends Activity {
             dirty = false;
             buildTiles();
         }
+        // A new wallpaper was picked: draw it (once, by the window, like the gradient).
+        String wallpaper = Wallpaper.current(this);
+        if (!wallpaper.equals(shownWallpaper)) {
+            shownWallpaper = wallpaper;
+            getWindow().setBackgroundDrawable(background());
+        }
         refreshNetwork();
         View f = getCurrentFocus();
         if (f == null && !tiles.isEmpty()) tiles.get(0).requestFocus();
@@ -265,23 +282,10 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() { /* home screen: nothing to go back to */ }
 
-    // Static warm gradient, drawn once by the window: no extra view, no animation.
+    // The picked wallpaper, else the static warm gradient, drawn once by the window: no extra view,
+    // no animation.
     private Drawable background() {
-        GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[] {0xFF15100F, 0xFF0A0809, 0xFF050405});
-        GradientDrawable warm = radial(0x36FF8048, 0.08f, -0.12f, px(1250));
-        GradientDrawable plum = radial(0x2EAA3C8C, 1.0f, 1.1f, px(1000));
-        for (GradientDrawable g : new GradientDrawable[] {base, warm, plum}) g.setDither(true);
-        return new LayerDrawable(new Drawable[] {base, warm, plum});
-    }
-
-    private static GradientDrawable radial(int color, float cx, float cy, float r) {
-        GradientDrawable g = new GradientDrawable();
-        g.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        g.setColors(new int[] {color, color & 0x00FFFFFF});
-        g.setGradientCenter(cx, cy);
-        g.setGradientRadius(r);
-        return g;
+        return Wallpaper.background(this, scale);
     }
 
     private void buildTiles() {
@@ -347,17 +351,20 @@ public class MainActivity extends Activity {
         addTile(root, SETTINGS, Strings.t("Settings"), null, LineIcon.SETTINGS, null, m + col++ * (w + g), bottomTop, w, h);
         addTile(root, ADD, Strings.t("Add app"), null, LineIcon.PLUS, null, m + col * (w + g), bottomTop, w, h);
 
-        // Plain icons at the top right, level with the date: any settings shortcuts picked, then the
-        // network icon. Added last, so the first app keeps first focus; Up from the apps reaches them.
+        // Plain icons at the top right, level with the date: any settings shortcuts picked, the
+        // wallpaper icon, then the network icon. Added last, so the first app keeps first focus; Up
+        // from the apps reaches them.
         List<Integer> quick = quickList();
         int ib = px(ICON_BUTTON), ig = px(ICON_GAP);
         // The last icon's right edge lines up with the apps' (its focus circle sticks out past them).
         int qx = getResources().getDisplayMetrics().widthPixels - m + (ib - px(ICON_SIZE)) / 2
-                - (quick.size() + 1) * ib - quick.size() * ig;
+                - (quick.size() + 2) * ib - (quick.size() + 1) * ig;
         for (int q : quick) {
             addIcon(QUICK + QUICK_NAMES[q], Strings.t(QUICK_LABELS[q]), new LineIcon(QUICK_ICONS[q]), qx);
             qx += ib + ig;
         }
+        addIcon(WALLPAPER, Strings.t("Wallpaper"), new LineIcon(LineIcon.WALLPAPER), qx);
+        qx += ib + ig;
         netIcon = addIcon(NETWORK, Strings.t("Network"), null, qx);
         netState = -1;
         refreshNetwork();
@@ -501,6 +508,8 @@ public class MainActivity extends Activity {
         } else if (NETWORK.equals(key)) {
             openNetworkSettings();
             return;
+        } else if (WALLPAPER.equals(key)) {
+            i = new Intent(this, WallpaperActivity.class);
         } else if (key.startsWith(QUICK)) {
             openQuick(key.substring(QUICK.length()));
             return;
@@ -945,7 +954,7 @@ public class MainActivity extends Activity {
     }
 
     // Xiaomi TVs ship MiLan Pro but don't register it by name; every other TV gets Roboto.
-    private static void loadFonts() {
+    static void loadFonts() {
         if (regular != null) return;
         regular = fromFile("/system/fonts/MILanPro_Normal.ttf", Typeface.create("sans-serif", Typeface.NORMAL));
         semibold = fromFile("/system/fonts/MILanPro_SemiBold.ttf", Typeface.create("sans-serif-medium", Typeface.NORMAL));
