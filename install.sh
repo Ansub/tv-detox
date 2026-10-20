@@ -11,6 +11,9 @@ cd "$(dirname "$0")"
 
 TARGET="$1"; APPS="$2"; QUICK="$3"
 [ -n "$TARGET" ] || { echo "Usage: sh install.sh <TV_IP> [\"app1,app2,...\"] [\"bluetooth,sound,picture\"]" >&2; exit 1; }
+if [ -z "$APPS" ] && [ -f "apps.txt" ]; then
+  APPS=$(grep -v '^[[:space:]]*#' apps.txt | tr -d ' \t\r' | grep -v '^$' | paste -sd, -)
+fi
 command -v adb >/dev/null 2>&1 || {
   echo "adb is missing. Install it first:" >&2
   echo "  Mac:     brew install android-platform-tools" >&2

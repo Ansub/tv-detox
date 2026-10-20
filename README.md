@@ -4,12 +4,14 @@
 
 ### Make an old, slow Android TV fast again.
 
-Claude Code or Codex does the work. You just press OK on the remote.
+Claude Code, Codex or Antigravity does the work. You just press OK on the remote.
 
 [![Release](https://img.shields.io/github/v/release/Ansub/tv-detox?color=black)](https://github.com/Ansub/tv-detox/releases/latest)
 [![Tests](https://img.shields.io/github/actions/workflow/status/Ansub/tv-detox/build.yml?branch=main&label=tests)](https://github.com/Ansub/tv-detox/actions)
 [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 [![YouTube](https://img.shields.io/badge/YouTube-@ansubkhan-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@ansubkhan)
+
+**Translations:** [Português do Brasil](README.pt-BR.md)
 
 <img src="docs/home-screen.png" alt="The TV Detox home screen" width="100%">
 
@@ -34,7 +36,7 @@ Claude Code or Codex does the work. You just press OK on the remote.
 **1. Turn on developer mode on the TV.**
 Settings → Device Preferences → About → press **Build** 7 times. Then turn on **USB debugging** in **Developer options**. [Stuck?](#help)
 
-**2. Open [Claude Code](https://claude.com/claude-code) or [Codex](https://openai.com/codex) on your laptop.**
+**2. Open [Claude Code](https://claude.com/claude-code), [Codex](https://openai.com/codex) or Antigravity on your laptop.**
 The laptop and TV must be on the same Wi-Fi.
 
 **3. Paste this in.**
@@ -86,7 +88,7 @@ That's it. It asks you before every change.
 3. Go back, open **Developer options** and turn on **USB debugging**. If you see **Network debugging** or **Wireless debugging**, turn that on too.
 4. The first time your laptop connects, the TV asks "Allow debugging?" Tick "Always allow" and press **Allow**.
 
-Menus differ a bit by brand. If you're stuck, ask Claude or Codex: *"I have a \<brand and model\> TV. How can you connect to it from my laptop and take control of it?"*
+Menus differ a bit by brand. If you're stuck, ask Claude, Codex or Antigravity: *"I have a \<brand and model\> TV. How can you connect to it from my laptop and take control of it?"*
 
 </details>
 
@@ -149,12 +151,12 @@ If the TV ever asks to be set up again, or a setup screen won't finish, turn the
 </details>
 
 <details>
-<summary><b>The Claude app says it can't reach my TV</b></summary>
+<summary><b>The AI assistant says it can't reach my TV</b></summary>
 <br>
 
-The chat in the Claude app (and claude.ai) runs on Anthropic's servers, not on your laptop, so it can't see your TV. You need something that runs on your own laptop: [Claude Code](https://claude.com/claude-code) or [Codex](https://openai.com/codex).
+The chat in the web apps runs on remote servers, not on your laptop, so it can't reach local Wi-Fi devices. You need something that runs directly on your computer: [Claude Code](https://claude.com/claude-code), [Codex](https://openai.com/codex) or Antigravity.
 
-Don't want to pay for either? Skip the AI and use `install.sh` instead (see "Can I install the home screen without AI?" below).
+Don't want to use AI? Skip the AI and use `install.sh` (or `install.bat` on Windows) instead (see "Can I install the home screen without AI?" below).
 
 </details>
 
@@ -162,7 +164,7 @@ Don't want to pay for either? Skip the AI and use `install.sh` instead (see "Can
 <summary><b>Can I do it from my phone, without a laptop?</b></summary>
 <br>
 
-Not yet. Claude has to run on a computer on the same network as your TV. A phone hotspot is fine as that network, as long as the laptop and TV both join it.
+Not yet. The tool has to run on a computer on the same network as your TV. A phone hotspot is fine as that network, as long as the laptop and TV both join it.
 
 </details>
 
@@ -170,7 +172,7 @@ Not yet. Claude has to run on a computer on the same network as your TV. A phone
 <summary><b>My TV is on Ethernet, not Wi-Fi</b></summary>
 <br>
 
-That works the same. Your laptop talks to the TV over its IP address on your home network, so cable or Wi-Fi doesn't matter. The laptop just has to be on the same network. You'll find the TV's IP in its network settings, or ask Claude to find it.
+That works the same. Your laptop talks to the TV over its IP address on your home network, so cable or Wi-Fi doesn't matter. The laptop just has to be on the same network. You'll find the TV's IP in its network settings, or ask the AI to find it.
 
 </details>
 
@@ -202,7 +204,7 @@ That's a TV setting, not this home screen. Ask it: *"My TV opens Live TV at star
 <summary><b>A button on the remote stopped working</b></summary>
 <br>
 
-Some remote buttons are handled by the TV's own home screen or by apps the cleanup turned off. To see which app handles which button, ask Claude: *"Run `adb shell dumpsys window policy` and tell me which apps my remote's global keys go to."* If it's an app other than your TV's home screen, turn that app back on.
+Some remote buttons are handled by the TV's own home screen or by apps the cleanup turned off. To see which app handles which button, ask Claude or Antigravity: *"Run `adb shell dumpsys window policy` and tell me which apps my remote's global keys go to."* If it's an app other than your TV's home screen, turn that app back on.
 
 **The YouTube button on some Google TVs** (seen on Xiaomi and Vu): it goes to Google TV's own home screen, which `install.sh` turns off, so the button does nothing. Turning that home screen back on brings the button back, but your TV may then open Google TV's home screen again instead of this one. Until there's a safe fix, open YouTube from its tile on the home screen.
 
@@ -218,7 +220,7 @@ sh check.sh <TV_IP> --fix            # and fix it
 sh check.sh <TV_IP> --fix my-tv.txt  # also check your own list of changes
 ```
 
-Your list has one change per line, like `off com.example.app`, `global window_animation_scale 0` or `device_config activity_manager max_cached_processes 4`. Ask Claude to write it from the changes it made.
+Your list has one change per line, like `off com.example.app`, `global window_animation_scale 0` or `device_config activity_manager max_cached_processes 4`. Ask the AI to write it from the changes it made.
 
 </details>
 
@@ -226,13 +228,20 @@ Your list has one change per line, like `off com.example.app`, `global window_an
 <summary><b>Can I install the home screen without AI?</b></summary>
 <br>
 
-Yes. You only need `adb`. On a Mac, run `brew install android-platform-tools`. On Windows, download Google's [SDK Platform Tools](https://developer.android.com/tools/releases/platform-tools), unzip it, and run the commands below from Git Bash. Download this repo, then:
+Yes. You only need `adb`. 
+
+* **On a Mac:** run `brew install android-platform-tools`.
+* **On Windows:** you can simply double-click `install.bat` (or run `install.ps1`), which automatically sets up ADB for you. Alternatively, download Google's [SDK Platform Tools](https://developer.android.com/tools/releases/platform-tools) and run from Git Bash:
 
 ```sh
 sh install.sh <TV_IP>                                               # picks your TV apps for you
 sh install.sh <TV_IP> "com.netflix.ninja,com.hulu.livingroomplus"   # or choose them
-sh install.sh <TV_IP> "" "bluetooth,sound,picture"    # add settings shortcuts
+sh install.sh <TV_IP> "" "bluetooth,sound,picture"                  # add settings shortcuts
 ```
+
+To undo:
+* **Mac/Linux:** `sh undo.sh <TV_IP>`
+* **Windows:** double-click `undo.bat` (or run `undo.ps1`).
 
 Most TVs keep opening their own home screen, so the script offers to turn that off. Nothing is uninstalled.
 
@@ -262,7 +271,7 @@ Yes. A small network icon always sits next to the clock. It shows **Wi-Fi** (wit
 
 ```sh
 sh install.sh <TV_IP> "" "bluetooth,sound,picture"   # pick any of them, in any order
-sh install.sh <TV_IP> "" "none"                                    # take them away
+sh install.sh <TV_IP> "" "none"                      # take them away
 ```
 
 Press **Up** from your apps to reach them. A shortcut your TV has no screen for is left out. On TCL TVs, Sound and Picture open TCL's own panels.
@@ -277,7 +286,9 @@ Press **Up** from your apps to reach them. A shortcut your TV has no screen for 
 sh undo.sh <TV_IP>
 ```
 
-This turns your TV's own home screen back on and removes this one. To undo the cleanup too, ask Claude or Codex to reverse everything on its list.
+Or on Windows: double-click `undo.bat`.
+
+This turns your TV's own home screen back on and removes this one. To undo the cleanup too, ask Claude, Codex or Antigravity to reverse everything on its list.
 
 </details>
 
@@ -299,7 +310,7 @@ That lists everything that's turned off. Turn each one back on with `adb shell p
 for p in $(adb shell pm list packages -d | tr -d '\r' | sed 's/package://'); do adb shell pm enable "$p"; done
 ```
 
-To undo just the home screen, run `sh undo.sh <TV_IP>`. Then restart the TV. You can redo the cleanup later, one app at a time.
+To undo just the home screen, run `sh undo.sh <TV_IP>` (or `undo.bat`). Then restart the TV. You can redo the cleanup later, one app at a time.
 
 If the laptop never connects, use the TV's recovery mode or a factory reset. How you get there depends on the brand and model, so check your TV maker's support page.
 
