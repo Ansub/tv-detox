@@ -94,7 +94,10 @@ public class MainActivity extends Activity {
     private static final int ICON_TOP = 76, ICON_BUTTON = 72, ICON_SIZE = 40, ICON_GAP = 12; // level with the date
 
     // The Settings tile opens a small menu: the home screen's own settings, then the TV's.
-    private static final String[] SETTINGS_ITEMS = {"Wallpaper", "TV settings"};
+    private static final String[] SETTINGS_ITEMS = {"Wallpaper", "Brightness", "TV settings"};
+    // Android TV 11 and later (Google TV too) has no Display page, but its "Display & Sound" page holds Picture.
+    private static final String[] TV_DISPLAY_SOUND = {"com.android.tv.settings",
+            "com.android.tv.settings.device.displaysound.DisplaySoundActivity"};
     // Wallpapers, saved by name: a gradient top to bottom, then a glow from the top left and one from
     // the bottom right. Dark ones first, then bright ones that get darker towards the bottom, so the
     // white labels stay easy to read. Only colours, no images, so every one costs the same as Dusk,
@@ -594,8 +597,8 @@ public class MainActivity extends Activity {
         } else if (SETTINGS.equals(key)) {
             dropdown(tile(SETTINGS), SETTINGS_ITEMS, which -> {
                 if (which == 0) showWallpapers();
-                else try { startActivity(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
-                catch (Exception ignored) {}
+                else if (which == 1) openBrightness();
+                else openTvSettings();
             });
             return;
         } else if (isInput(key)) {
@@ -740,15 +743,36 @@ public class MainActivity extends Activity {
         return out;
     }
 
-    // Opens a shortcut's screen: the first one that starts wins.
-    private void openQuick(String name) {
+    // Opens a shortcut's screen: the first one that starts wins. False if none did.
+    private boolean openQuick(String name) {
         for (Intent i : quickIntents(name)) {
             try {
                 if (TCL_SHOW_WINDOW.equals(i.getAction())) startService(i);
                 else startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                return true;
+            } catch (Exception ignored) {}
+        }
+        return false;
+    }
+
+    // The TV's own picture screen, where brightness lives: the Picture shortcut's screens first (TCL's
+    // panel, then Android's Display page), then Android TV's Display & Sound page, else TV settings.
+    // Only system screens are started, so it needs no permission and changes nothing by itself.
+    private void openBrightness() {
+        if (openQuick("picture")) return;
+        Intent i = new Intent().setClassName(TV_DISPLAY_SOUND[0], TV_DISPLAY_SOUND[1]);
+        if (i.resolveActivity(getPackageManager()) != null) {
+            try {
+                startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
                 return;
             } catch (Exception ignored) {}
         }
+        openTvSettings();
+    }
+
+    private void openTvSettings() {
+        try { startActivity(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
+        catch (Exception ignored) {}
     }
 
     interface Pick { void at(int which); }
