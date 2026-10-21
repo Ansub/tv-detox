@@ -183,7 +183,9 @@ public class MainActivity extends Activity {
         time.setLetterSpacing(-0.028f);
         time.setFontFeatureSettings("tnum");
         time.setIncludeFontPadding(false);
-        clock.addView(date);
+        // Wrap, not the default match_parent: the column must be as wide as the date, not just the time,
+        // or "0:00" to "9:59" (one digit less) cuts a long date off.
+        clock.addView(date, new LinearLayout.LayoutParams(-2, -2));
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-2, -2);
         tp.topMargin = px(-20); // pull the big digits up under the date
         clock.addView(time, tp);
