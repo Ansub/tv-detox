@@ -41,14 +41,9 @@ Claude Code or Codex does the work. You just press OK on the remote.
 
 ## Get started
 
-> [!WARNING]
-> **Google TV and Chromecast with Google TV:** don't turn off the TV's own home screen. On some of these devices that left them stuck restarting, and the only fix was a factory reset. Since v1.4.1, `install.sh` leaves it on for Google TV unless you opt in with `GOOGLE_TV=1`. The cleanup still works and makes the TV faster. You just keep Google TV's own home screen.
-
-> [!WARNING]
-> **OLED TVs:** keep the screensaver on. It stops a still picture from burning into the screen. Don't leave any home screen, this one included, on for hours.
-
 **1. Turn on developer mode on the TV.**
 Settings → Device Preferences → About → press **Build** 7 times. Then turn on **USB debugging** in **Developer options**. [Stuck?](#help)
+Read the [notes and warnings](#notes-and-warnings) first.
 
 **2. Open [Claude Code](https://claude.com/claude-code) or [Codex](https://openai.com/codex) on your laptop.**
 The laptop and TV must be on the same Wi-Fi.
@@ -59,15 +54,21 @@ The laptop and TV must be on the same Wi-Fi.
 Help me clean up my Android TV and make it faster.
 My TV is a <brand and model>.
 
-1. Connect to my TV over Wi-Fi. Walk me through anything
+1. Before you change anything, tell me in plain words:
+   this turns off system apps, and that has some risk.
+   A few TVs got stuck at the logo or kept restarting,
+   and you're an AI, so you can make mistakes. undo.sh
+   and your undo list turn everything back on. Ask me to
+   confirm I want to go ahead.
+2. Connect to my TV over Wi-Fi. Walk me through anything
    I need to tap on the TV.
-2. Before changing anything, list every app in plain English:
+3. Before changing anything, list every app in plain English:
    safe to turn off, needed by the TV, and apps I use.
    Check free memory.
-3. Ask me before every change. Turn apps off instead of
+4. Ask me before every change. Turn apps off instead of
    deleting them. Keep a list of what you changed and how
    to undo it.
-4. Never turn off: Google Play services
+5. Never turn off: Google Play services
    (com.google.android.gms), Google Play, Settings,
    System UI, setup apps, the keyboard, Bluetooth, my HDMI
    inputs, the TV's input and tuner framework, or anything
@@ -75,23 +76,42 @@ My TV is a <brand and model>.
    also never turn off Google TV's home screen
    (com.google.android.apps.tv.launcherx). If you're not
    sure, leave it on.
-5. Install the home screen: download
+6. Install the home screen: download
    https://github.com/Ansub/tv-detox and run its
    install.sh with my TV and these apps: <your apps>.
-6. Turn off animations and make the TV sleep after 5
+7. Turn off animations and make the TV sleep after 5
    minutes. Then check the model name and ask me if the TV
    is OLED. Keep the screensaver on unless I say it's not
    OLED.
-7. Wait 30 seconds after the last change, then restart the
+8. Wait 30 seconds after the last change, then restart the
    TV once and check it starts up normally before you say
    you're done. Show me free memory before
    and after.
+9. Once everything is checked, remind me to turn off USB,
+   Network and Wireless debugging (or Developer options)
+   on the TV. Left on, other devices on my network can ask
+   to control it. I only turn it back on for undo.sh or
+   updates.
 ```
 
 That's it. It asks you before every change.
 
+**4. Turn debugging off when it's done.**
+In **Developer options**, turn off **USB debugging**, plus **Network debugging** or **Wireless debugging** if you turned them on. Or turn off **Developer options** completely.
+
+### Notes and warnings
+
+> [!WARNING]
+> **Do it at your own risk.** This turns off system apps. A few TVs got stuck at the logo or kept restarting, and the AI can make mistakes. It asks you before every change, and [`undo.sh`](#undo) plus its undo list turn everything back on. This is what worked for us, not professional advice. You're responsible for your own TV, and I'm not liable if something goes wrong.
+
+> [!WARNING]
+> **Google TV and Chromecast with Google TV:** don't turn off the TV's own home screen. On some of these devices that left them stuck restarting, and the only fix was a factory reset. Since v1.4.1, `install.sh` leaves it on for Google TV unless you opt in with `GOOGLE_TV=1`. The cleanup still works and makes the TV faster. You just keep Google TV's own home screen.
+
+> [!WARNING]
+> **OLED TVs:** keep the screensaver on. It stops a still picture from burning into the screen. Don't leave any home screen, this one included, on for hours.
+
 > [!NOTE]
-> This is what worked for us, not professional advice. Use it at your own risk. You're responsible for your own TV, and I'm not liable if something goes wrong.
+> **Turn debugging off afterwards.** While USB, Network or Wireless debugging is on, other devices on your network can ask to control the TV. Turn it off once setup is done, and back on only to run `undo.sh` or update.
 
 ## Help
 
@@ -103,6 +123,7 @@ That's it. It asks you before every change.
 2. Press OK on **Build** 7 times until you see "You are now a developer."
 3. Go back, open **Developer options** and turn on **USB debugging**. If you see **Network debugging** or **Wireless debugging**, turn that on too.
 4. The first time your laptop connects, the TV asks "Allow debugging?" Tick "Always allow" and press **Allow**.
+5. When setup is done, turn **USB debugging**, **Network debugging** and **Wireless debugging** off again (or turn off **Developer options**). Turn them back on only to run `undo.sh` or update.
 
 **Chromecast with Google TV and other newer Google TVs** usually only have **Wireless debugging**, which needs a pairing code. `install.sh <TV_IP>` alone won't connect. Instead:
 
@@ -389,6 +410,7 @@ Press **Up** from your apps to reach them. A shortcut your TV has no screen for 
 
 </details>
 
+<a id="undo"></a>
 <details>
 <summary><b>How do I undo it?</b></summary>
 <br>
@@ -398,6 +420,8 @@ sh undo.sh <TV_IP>
 ```
 
 This turns your TV's own home screen back on and removes this one. To undo the cleanup too, ask Claude or Codex to reverse everything on its list.
+
+If you turned debugging off after setup, turn it back on first, then off again when you're done.
 
 </details>
 
