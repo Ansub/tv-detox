@@ -392,7 +392,16 @@ To add an app, pick the **Add app** tile in the bottom row. Add as many apps as 
 <summary><b>Can I change the background?</b></summary>
 <br>
 
-Yes. Pick the **Settings** tile, then **Wallpaper**. (**TV settings**, right under it, opens the TV's own settings.) There are fourteen gradients. Dark: Dusk (the default), Midnight, Plum, Forest, Graphite, Ocean and Ember. Bright: Sunset, Lagoon, Aurora, Coral, Iris, Meadow and Gold. The background changes as you move through the list; press **OK** to keep one, or **Back** to leave it as it was. They're colours only, no pictures, so every one is just as fast and uses the same memory.
+Yes. Pick the **Settings** tile, then **Wallpaper**. (**TV settings**, right under it, opens the TV's own settings.) There are fourteen gradients. Dark: Dusk (the default), Midnight, Plum, Forest, Graphite, Ocean and Ember. Bright: Sunset, Lagoon, Aurora, Coral, Iris, Meadow and Gold. The background changes as you move through the list; press **OK** to keep one, or **Back** to leave it as it was. The gradients are colours only, so every one is just as fast and uses the same memory.
+
+**Want your own picture?** It's optional, and nothing is loaded unless you add one. Make a 1920×1080 JPG (this home screen draws at 1080p, so a bigger picture won't look sharper), name it `wallpaper.jpg`, and send it to the TV:
+
+```sh
+adb shell mkdir -p /sdcard/Android/data/com.ansub.tvhome/files
+adb push wallpaper.jpg /sdcard/Android/data/com.ansub.tvhome/files/wallpaper.jpg
+```
+
+A **Picture** entry then appears at the end of the **Wallpaper** list. Pick it like any other. The picture is dimmed a little so the white labels stay easy to read. It needs no extra permission and no internet. To go back, pick a gradient; to remove the picture, delete the file.
 
 </details>
 
