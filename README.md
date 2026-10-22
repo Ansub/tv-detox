@@ -295,9 +295,7 @@ Tested on a OnePlus TV E00 (QLED, Android TV 11 with Google TV's home screen, 2.
 - `com.heytap.tv.livetv`: Live TV, which also opens the HDMI input list. Turning it off can stop you switching inputs.
 - `com.mediatek.*`, `com.oneplus.tv.factory`, `com.oneplus.tv.remote`: the remote's buttons, the input key, the tuner and HDMI.
 
-**Remote buttons.** The **Guide** and **All apps** keys go to Google TV's home screen, so they do nothing once it's off. That's expected.
-
-**"Hey Google" uses the CPU all the time.** On this TV, hands-free "Hey Google" kept about 25% of one CPU core busy listening to the built-in microphone (`AudioInputProcessor` in `com.google.android.katniss:interactor`). Turning hands-free "Hey Google" off in Settings → Google Assistant should free that, and the mic button on the remote should keep working. I haven't tried it yet, so check voice search afterwards.
+**Remote buttons.** If you turned Google TV's home screen off, the **Guide** and **All apps** keys do nothing, because they open it. That's expected.
 
 </details>
 
