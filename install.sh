@@ -4,6 +4,7 @@
 #   sh install.sh <TV_IP>                          your TV apps, picked for you
 #   sh install.sh <TV_IP> "com.netflix.ninja,com.google.android.youtube.tv"
 #   sh install.sh <TV_IP> "" "bluetooth,sound,picture"   adds settings shortcuts by the clock
+#   sh install.sh <TV_IP> "" "settings"                  the Settings menu as a gear by the clock
 #
 # On Google TV (Chromecast with Google TV and others) the TV's own home screen is left on.
 # GOOGLE_TV=1 turns it off anyway; only do that if you can reconnect over USB or port 5555.
@@ -39,7 +40,21 @@ APK=out/tvhome.apk
 if [ ! -f "$APK" ]; then
   APK=$(mktemp -d)/tvhome.apk
   echo "Downloading the home screen…"
-  curl -fsSL -o "$APK" https://github.com/Ansub/tv-detox/releases/latest/download/tvhome.apk
+  REL=https://github.com/Ansub/tv-detox/releases/latest/download
+  curl -fsSL -o "$APK" "$REL/tvhome.apk"
+  # Releases publish the APK's SHA-256 next to it; check the download against it when it's there.
+  if curl -fsSL -o "$APK.sha256" "$REL/tvhome.apk.sha256" 2>/dev/null; then
+    want=$(cut -d' ' -f1 "$APK.sha256" | tr -d '\r\n')
+    if command -v sha256sum >/dev/null 2>&1; then have=$(sha256sum "$APK" | cut -d' ' -f1)
+    elif command -v shasum >/dev/null 2>&1; then have=$(shasum -a 256 "$APK" | cut -d' ' -f1)
+    else have=; echo "Can't check the download: neither sha256sum nor shasum is installed." >&2; fi
+    if [ -n "$have" ] && [ "$have" != "$want" ]; then
+      echo "The downloaded home screen doesn't match its published checksum. Not installing it." >&2
+      echo "Try again, or build it yourself with build.sh." >&2; exit 1
+    fi
+  else
+    echo "This release has no published checksum, so the download wasn't checked."
+  fi
 fi
 
 echo "Installing… If your TV shows a Google Play Protect message, follow it on the TV to allow the install."
@@ -70,9 +85,9 @@ if [ "$(sh_tv getprop ro.build.version.sdk)" -ge 29 ]; then
 fi
 sh_tv cmd package set-home-activity "$ME" >/dev/null 2>&1 || true
 
-# Known TV home screens that are safe to turn off.
-LAUNCHERS="com.google.android.tvlauncher com.google.android.apps.tv.launcherx com.google.android.leanbacklauncher
-  com.mitv.tvhome com.amazon.tv.launcher"
+# Known TV home screens that are safe to turn off: the "launcher" lines of packages.txt.
+[ -r packages.txt ] || { echo "packages.txt is missing. Download the whole repository, not just this script." >&2; exit 1; }
+LAUNCHERS=$(tr -d '\r' < packages.txt | awk -F'\t' '$1 == "launcher" { print $2 }')
 
 # Only known launchers get turned off. Settings, setup and System UI also answer Home, and
 # the TV needs them to start, so they, unknown apps and anything always running stay on.
