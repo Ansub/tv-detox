@@ -267,6 +267,43 @@ adb shell ime set <the keyboard you noted>
 </details>
 
 <details>
+<summary><b>OnePlus TVs: what worked, and what to keep</b></summary>
+<br>
+
+Tested on a OnePlus TV E00 (QLED, Android TV 11 with Google TV's home screen, 2.9 GB of RAM). The cleanup was followed by a restart, and the TV started normally and opened this home screen by itself. Free memory went from about 1.34 GB to about 1.67 GB, though part of that is just from restarting.
+
+**Home screen.** OnePlus ships two home screens: OxygenPlay (`com.oneplus.tv.launcher`) and Google TV's (`com.google.android.apps.tv.launcherx`). Both turned off without trouble. As on the TCL above, Home then opened Google TV's setup app, and `GOOGLE_TV=1 YES_SETUP=1` fixed it.
+
+**Safe to turn off**, if you don't use them:
+
+| App | Package |
+|---|---|
+| OxygenPlay home screen | `com.oneplus.tv.launcher` |
+| OnePlus message board and promos | `com.heytap.tv.msgboard` |
+| Store demo | `fusion.android.tv.demo` |
+| User guide | `com.oneplus.tv.userguide` |
+| Weather | `net.oneplus.weather` |
+| ColorOS Relax | `com.coloros.relax.tv` |
+| Screen mirroring (Miracast) | `com.heytap.optvmiracastservice` |
+| OnePlus phone link | `com.heytap.olink`, `com.heytap.ars.sink` |
+| Bluetooth speaker mode | `com.heytap.tv.btspeaker` |
+| Camera | `com.heytap.tv.camera` |
+| AirScreen | `com.ionitech.airscreen` |
+
+Preinstalled partner apps (Indian models), also safe off if you don't use them: ahaflix (`ahaflix.tv`), discovery+ (`com.discoveryplus.tv.android`), Eros Now (`com.eros.now`), Jio On Demand (`com.jio.media.stb.ondemand`), JioPages (`com.jio.web.androidtv`), JioGames (`com.jiostb.jiogames`), Lionsgate Play (`com.lionsgateplay.videoapp`), MX Player (`com.mxtech.videoplayer.television`), Plex (`com.plexapp.android`), Spotify (`com.spotify.tv.android`), TCL browser (`com.tcl.browser`), Voot (`com.viacom18.tv.voot`) and Hoichoi (`com.viewlift.hoichoi`).
+
+**Keep these on:**
+
+- `com.heytap.tv.livetv`: Live TV, which also opens the HDMI input list. Turning it off can stop you switching inputs.
+- `com.mediatek.*`, `com.oneplus.tv.factory`, `com.oneplus.tv.remote`: the remote's buttons, the input key, the tuner and HDMI.
+
+**Remote buttons.** The **Guide** and **All apps** keys go to Google TV's home screen, so they do nothing once it's off. That's expected.
+
+**"Hey Google" uses the CPU all the time.** On this TV, hands-free "Hey Google" kept about 25% of one CPU core busy listening to the built-in microphone (`AudioInputProcessor` in `com.google.android.katniss:interactor`). Turning hands-free "Hey Google" off in Settings → Google Assistant should free that, and the mic button on the remote should keep working. I haven't tried it yet, so check voice search afterwards.
+
+</details>
+
+<details>
 <summary><b>The Claude app says it can't reach my TV</b></summary>
 <br>
 
