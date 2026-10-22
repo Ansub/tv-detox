@@ -176,6 +176,7 @@ The cleanup works, but **leave Google TV's own home screen on**, which means you
 
 - Connect with Wireless debugging (see "How do I turn on developer mode?" above). The plain `install.sh <TV_IP>` won't reach a Chromecast.
 - The YouTube button on the remote can stop working, and some lose casting. Tell Claude to keep casting on if you use it.
+- To make Home open this home screen anyway, turn on **Settings > Accessibility > Home button**. Google TV's home screen stays on: when it opens, this one opens over it. Hold Back on this home screen to go to Google TV's, which then stays until you open "Home" from its apps row. If the Accessibility screen freezes, turn it on with `adb shell settings put secure enabled_accessibility_services com.ansub.tvhome/.HomeButton` and `adb shell settings put secure accessibility_enabled 1`. Turning it off puts Home back to Google TV's.
 
 </details>
 

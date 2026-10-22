@@ -134,6 +134,7 @@ public class MainActivity extends Activity {
     private String movingKey;   // the app being moved with left/right, if any
     private TextView moveHint;  // shown above the apps while moving
     private boolean longPressed; // OK was held: swallow the key-up so the app doesn't open
+    private boolean backHeld; // Back was held and opened Google TV's home screen: swallow the key-up
     // The tile OK went down on. An app that closes on OK's key-down (Netflix's "Exit") hands the matching
     // key-up to the tile still focused here, so a key-up only opens the app it went down on (#30).
     private String okDownKey;
@@ -283,6 +284,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        HomeButton.googleTv = false; // back on this home screen: Home comes here again
+
         // Rebuild only when apps were installed, removed or updated.
         if (dirty) {
             dirty = false;
@@ -318,6 +321,30 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() { /* home screen: nothing to go back to */ }
+
+    // Holding Back opens Google TV's own home screen, where it stays on (see HomeButton). Spotted on a
+    // key repeat, or when Back is let go if the remote sends none.
+    @Override
+    public boolean onKeyLongPress(int code, KeyEvent ev) {
+        if (code == KeyEvent.KEYCODE_BACK && HomeButton.openGoogleTv(this)) {
+            backHeld = true;
+            return true;
+        }
+        return super.onKeyLongPress(code, ev);
+    }
+
+    @Override
+    public boolean onKeyUp(int code, KeyEvent ev) {
+        if (code == KeyEvent.KEYCODE_BACK) {
+            boolean held = backHeld;
+            backHeld = false;
+            if (held) return true;
+            if (ev.isTracking() && !ev.isCanceled()
+                    && ev.getEventTime() - ev.getDownTime() >= ViewConfiguration.getLongPressTimeout()
+                    && HomeButton.openGoogleTv(this)) return true;
+        }
+        return super.onKeyUp(code, ev);
+    }
 
     // Static gradient, drawn once by the window: no extra view, no animation.
     private Drawable background(int[] c) {
