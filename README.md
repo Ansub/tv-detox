@@ -267,6 +267,39 @@ adb shell ime set <the keyboard you noted>
 </details>
 
 <details>
+<summary><b>OnePlus TVs: what worked, and what to keep</b></summary>
+<br>
+
+Tested on a OnePlus TV E00 (QLED, Android TV 11 with Google TV's home screen, 2.9 GB of RAM). The cleanup was followed by a restart, and the TV started normally and opened this home screen by itself. Free memory went from about 1.34 GB to about 1.67 GB, though part of that is just from restarting.
+
+**Home screen.** OnePlus ships two home screens: OxygenPlay (`com.oneplus.tv.launcher`) and Google TV's (`com.google.android.apps.tv.launcherx`). Turning off Google TV's is up to you and at your own risk: it worked on this TV, but it has left some Google TVs (like Chromecast) stuck restarting. Only try it if you can reconnect over USB or port 5555. If you leave it on, the cleanup still works and Home keeps opening Google TV's home screen. If you do turn it off and Home opens Google TV's setup app, run `install.sh` again with `GOOGLE_TV=1 YES_SETUP=1`, the same fix as on the TCL above.
+
+**Safe to turn off**, if you don't use them:
+
+| App | Package |
+|---|---|
+| OxygenPlay home screen | `com.oneplus.tv.launcher` |
+| OnePlus message board and promos | `com.heytap.tv.msgboard` |
+| Store demo | `fusion.android.tv.demo` |
+| User guide | `com.oneplus.tv.userguide` |
+| Weather | `net.oneplus.weather` |
+| ColorOS Relax | `com.coloros.relax.tv` |
+| Screen mirroring (Miracast) | `com.heytap.optvmiracastservice` |
+| OnePlus phone link | `com.heytap.olink`, `com.heytap.ars.sink` |
+| Bluetooth speaker mode | `com.heytap.tv.btspeaker` |
+| Camera | `com.heytap.tv.camera` |
+| AirScreen | `com.ionitech.airscreen` |
+
+**Keep these on:**
+
+- `com.heytap.tv.livetv`: Live TV, which also opens the HDMI input list. Turning it off can stop you switching inputs.
+- `com.mediatek.*`, `com.oneplus.tv.factory`, `com.oneplus.tv.remote`: the remote's buttons, the input key, the tuner and HDMI.
+
+**Remote buttons.** If you turned Google TV's home screen off, the **Guide** and **All apps** keys do nothing, because they open it. That's expected.
+
+</details>
+
+<details>
 <summary><b>The Claude app says it can't reach my TV</b></summary>
 <br>
 
