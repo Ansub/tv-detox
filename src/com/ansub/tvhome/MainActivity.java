@@ -344,7 +344,7 @@ public class MainActivity extends Activity {
         return names;
     }
 
-    // The picture, cut down while it is read (about 1920 wide, 2 bytes a pixel), under a dark layer so the
+    // The picture, cut down while it is read (about 1920 wide, 4 bytes a pixel, so gradients stay smooth), under a dark layer so the
     // white labels stay easy to read. Null if it can not be read.
     private Drawable pictureBackground() {
         try {
@@ -356,7 +356,7 @@ public class MainActivity extends Activity {
             o.inSampleSize = 1;
             while (o.outWidth / (o.inSampleSize * 2) >= target) o.inSampleSize *= 2;
             o.inJustDecodeBounds = false;
-            o.inPreferredConfig = Bitmap.Config.RGB_565;
+            o.inPreferredConfig = Bitmap.Config.ARGB_8888;
             Bitmap b = android.graphics.BitmapFactory.decodeFile(f.getPath(), o);
             if (b == null) return null;
             BitmapDrawable d = new BitmapDrawable(getResources(), b);
