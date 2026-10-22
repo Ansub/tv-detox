@@ -427,6 +427,34 @@ To change the picture, push a new `wallpaper.jpg` the same way, then open **Wall
 
 **Picture is not in the list?** The file is missing or in the wrong folder. Run `adb shell ls /sdcard/Android/data/com.ansub.tvhome/files/` and check that `wallpaper.jpg` is there. If you uninstall the home screen, its folder and the picture are deleted with it, so push the picture again after a reinstall. A picture that can't be read is skipped, and the gradient shows instead.
 
+**Let Claude do it for you.** Steps 1 to 3 can be done by [Claude Code](https://claude.com/claude-code) or [Codex](https://openai.com/codex), the same way as the cleanup. Turn on debugging on the TV first (see "How do I turn on developer mode?" above), make sure the laptop and TV are on the same Wi-Fi, then paste this in:
+
+```text
+Set a picture as the wallpaper on my Android TV home screen
+(this home screen: https://github.com/Ansub/tv-detox).
+The picture is: <full path to your picture>
+My TV's address is: <TV IP, or ask me and help me find it>
+
+1. Connect to my TV over Wi-Fi with adb. If it needs a
+   pairing code, walk me through what to tap on the TV.
+2. Check that com.ansub.tvhome is installed and is the
+   home screen. If it isn't, stop and tell me. Don't
+   install or change anything else.
+3. Make a copy of my picture: JPG, exactly 1920x1080,
+   cropped to fill (not stretched), high quality. Leave
+   my original file alone. Tell me where the copy is.
+4. Ask me before you send it. Then create the folder
+   /sdcard/Android/data/com.ansub.tvhome/files on the TV
+   and push the copy there as wallpaper.jpg.
+5. Press Home on the TV, then tell me in plain words
+   where to tap: Settings tile, Wallpaper, Picture, OK.
+6. Tell me how to undo it: pick a gradient, or delete
+   wallpaper.jpg.
+7. Remind me to turn debugging off on the TV when done.
+```
+
+It sends nothing until you say yes, and it keeps your original picture as it is.
+
 Remember to turn debugging off again afterwards (see the note above).
 
 </details>
