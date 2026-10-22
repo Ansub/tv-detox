@@ -329,30 +329,76 @@ public class MainActivity extends Activity {
         return new LayerDrawable(new Drawable[] {base, top, bottom});
     }
 
-    // The saved wallpaper, as an index into WALLPAPERS (Dusk if none is saved).
+    // Own picture: put wallpaper.jpg in this app's folder on the TV (adb push it to
+    // /sdcard/Android/data/com.ansub.tvhome/files/). No permission, no internet. If the file is not
+    // there, the menu has no "Picture" entry and nothing is loaded.
+    private java.io.File pictureFile() {
+        java.io.File dir = getExternalFilesDir(null);
+        return dir == null ? null : new java.io.File(dir, "wallpaper.jpg");
+    }
+
+    private List<String> wallpaperNames() {
+        List<String> names = new ArrayList<>(Arrays.asList(WALLPAPER_NAMES));
+        java.io.File f = pictureFile();
+        if (f != null && f.isFile()) names.add("Picture");
+        return names;
+    }
+
+    // The picture, cut down while it is read (about 1920 wide, 2 bytes a pixel), under a dark layer so the
+    // white labels stay easy to read. Null if it can not be read.
+    private Drawable pictureBackground() {
+        try {
+            java.io.File f = pictureFile();
+            android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+            android.graphics.BitmapFactory.decodeFile(f.getPath(), o);
+            int target = Math.max(1920, getResources().getDisplayMetrics().widthPixels);
+            o.inSampleSize = 1;
+            while (o.outWidth / (o.inSampleSize * 2) >= target) o.inSampleSize *= 2;
+            o.inJustDecodeBounds = false;
+            o.inPreferredConfig = Bitmap.Config.RGB_565;
+            Bitmap b = android.graphics.BitmapFactory.decodeFile(f.getPath(), o);
+            if (b == null) return null;
+            BitmapDrawable d = new BitmapDrawable(getResources(), b);
+            d.setGravity(android.view.Gravity.FILL);
+            return new LayerDrawable(new Drawable[] {d, new ColorDrawable(0x73000000)});
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    // The saved wallpaper, as an index into wallpaperNames() (Dusk if none is saved).
     private int wallpaper() {
         String saved = getSharedPreferences(PREFS, 0).getString("wallpaper", null);
-        return Math.max(0, Arrays.asList(WALLPAPER_NAMES).indexOf(saved));
+        return Math.max(0, wallpaperNames().indexOf(saved));
     }
 
     private void showWallpaper(int i) {
-        getWindow().setBackgroundDrawable(background(WALLPAPERS[i]));
+        Drawable d = i >= WALLPAPERS.length ? pictureBackground() : null;
+        getWindow().setBackgroundDrawable(d != null ? d : background(WALLPAPERS[Math.min(i, WALLPAPERS.length - 1)]));
     }
 
     // The wallpapers, each with a small dot of its colours. Moving through the list shows each one
     // behind the panel; OK keeps it, Back goes back to the one before.
     private void showWallpapers() {
         final int size = px(40);
-        panel(Strings.t("Wallpaper"), Arrays.asList(WALLPAPER_NAMES), pos -> {
-            int[] c = WALLPAPERS[pos];
-            GradientDrawable dot = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                    new int[] {glow(c[3], c[0]), c[1], glow(c[4], c[0])});
+        final List<String> names = wallpaperNames();
+        panel(Strings.t("Wallpaper"), names, pos -> {
+            GradientDrawable dot;
+            if (pos >= WALLPAPERS.length) {
+                dot = new GradientDrawable();
+                dot.setColor(0xFF8A8A8A);
+            } else {
+                int[] c = WALLPAPERS[pos];
+                dot = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                        new int[] {glow(c[3], c[0]), c[1], glow(c[4], c[0])});
+            }
             dot.setShape(GradientDrawable.OVAL);
             dot.setStroke(Math.max(1, px(2)), 0x26FFFFFF);
             dot.setSize(size, size);
             return dot;
         }, size, wallpaper(), this::showWallpaper, which -> {
-            getSharedPreferences(PREFS, 0).edit().putString("wallpaper", WALLPAPER_NAMES[which]).apply();
+            getSharedPreferences(PREFS, 0).edit().putString("wallpaper", names.get(which)).apply();
             showWallpaper(which);
         });
     }
