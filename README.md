@@ -394,14 +394,40 @@ To add an app, pick the **Add app** tile in the bottom row. Add as many apps as 
 
 Yes. Pick the **Settings** tile, then **Wallpaper**. (**TV settings**, right under it, opens the TV's own settings.) There are fourteen gradients. Dark: Dusk (the default), Midnight, Plum, Forest, Graphite, Ocean and Ember. Bright: Sunset, Lagoon, Aurora, Coral, Iris, Meadow and Gold. The background changes as you move through the list; press **OK** to keep one, or **Back** to leave it as it was. The gradients are colours only, so every one is just as fast and uses the same memory.
 
-**Want your own picture?** It's optional, and nothing is loaded unless you add one. Make a 1920×1080 JPG (this home screen draws at 1080p, so a bigger picture won't look sharper), name it `wallpaper.jpg`, and send it to the TV:
+**Want your own picture?** See [Can I use my own picture as the wallpaper?](#own-picture) below.
+
+</details>
+
+<details id="own-picture">
+<summary><b>Can I use my own picture as the wallpaper?</b></summary>
+<br>
+
+Yes. It's optional, and nothing is loaded unless you add a picture, so the home screen stays as light as before. It needs no extra permission and no internet.
+
+**1. Make the picture.** A JPG named `wallpaper.jpg`, 1920×1080. This home screen draws at 1080p, so a bigger picture won't look sharper, it only uses more memory. A picture with another shape is stretched to fill the screen, so crop it to 16:9 first.
+
+**2. Connect your computer to the TV.** Use `adb`, the same way as for the cleanup (see "How do I turn on developer mode?" above). It works over Wi-Fi or Ethernet, no cable needed:
+
+```sh
+adb connect <TV_IP>
+```
+
+On a Chromecast or a newer Google TV, use **Wireless debugging** and pair first, as described in that answer. Check with `adb devices`: your TV should be listed as `device`.
+
+**3. Send the picture to the TV:**
 
 ```sh
 adb shell mkdir -p /sdcard/Android/data/com.ansub.tvhome/files
 adb push wallpaper.jpg /sdcard/Android/data/com.ansub.tvhome/files/wallpaper.jpg
 ```
 
-A **Picture** entry then appears at the end of the **Wallpaper** list. Pick it like any other. The picture is dimmed a little so the white labels stay easy to read. It needs no extra permission and no internet. To go back, pick a gradient; to remove the picture, delete the file.
+**4. Pick it.** Open the **Settings** tile, then **Wallpaper**. A **Picture** entry is now at the end of the list. Press **OK** to keep it. The picture is dimmed a little so the white labels stay easy to read.
+
+To change the picture, push a new `wallpaper.jpg` the same way, then open **Wallpaper** again and pick **Picture**. To go back, pick a gradient. To remove the picture completely, run `adb shell rm /sdcard/Android/data/com.ansub.tvhome/files/wallpaper.jpg`.
+
+**Picture is not in the list?** The file is missing or in the wrong folder. Run `adb shell ls /sdcard/Android/data/com.ansub.tvhome/files/` and check that `wallpaper.jpg` is there. If you uninstall the home screen, its folder and the picture are deleted with it, so push the picture again after a reinstall. A picture that can't be read is skipped, and the gradient shows instead.
+
+Remember to turn debugging off again afterwards (see the note above).
 
 </details>
 
