@@ -1,9 +1,9 @@
 #!/bin/sh
 # Checks your TV is still cleaned up, and with --fix puts back whatever an update undid.
 #
-#   sh check.sh <TV_IP>                   check the home screen
+#   sh check.sh <TV_IP>                   check the home screen and the cleanup apply.sh made
 #   sh check.sh <TV_IP> --fix             and fix it
-#   sh check.sh <TV_IP> --fix my-tv.txt   also check your own list of changes
+#   sh check.sh <TV_IP> --fix my-tv.txt   also check a list of changes made by hand
 #
 # The list has one change per line (# starts a comment):
 #   off com.example.app                        the app stays turned off
@@ -52,6 +52,28 @@ if [ "$(home)" != "$ME" ] && installed $LAUNCHERX && ! is_off $LAUNCHERX && ! ec
 else
   check "Home opens this home screen" '[ "$(home)" = "$ME" ]' \
     'sh_tv cmd role add-role-holder --user 0 android.app.role.HOME com.ansub.tvhome; sh_tv cmd package set-home-activity "$ME"'
+fi
+
+# The cleanup apply.sh made, from its undo list on the TV.
+JOURNAL=/data/local/tmp/tvhome-cleanup.txt
+journal=$(sh_tv "if [ -e $JOURNAL ]; then cat $JOURNAL; fi" 2>/dev/null | grep -v '^$' || true)
+if [ -n "$journal" ]; then
+  echo "Cleanup (apply.sh)"
+  printf '%s\n' "$journal" | while read -r kind a b c d; do
+    case "$kind" in
+      off)
+        if installed "$a"; then check "$a stays off" "is_off $a" "sh_tv pm disable-user --user 0 $a"
+        else echo "  gone  $a (not installed)"; fi ;;
+      global|secure|system)
+        check "$kind $a = $b" "[ \"\$(sh_tv settings get $kind $a)\" = \"$b\" ]" "sh_tv settings put $kind $a $b" ;;
+      device_config)
+        check "$a/$b = $c" "[ \"\$(sh_tv device_config get $a $b)\" = \"$c\" ]" "sh_tv device_config put $a $b $c" ;;
+      *) echo "  ?     can't read: $kind $a $b $c $d" ;;
+    esac
+  done > "${TMPDIR:-/tmp}/tvcheck.$$" || true
+  cat "${TMPDIR:-/tmp}/tvcheck.$$"
+  n=$(grep -c "WRONG" "${TMPDIR:-/tmp}/tvcheck.$$" || true); bad=$((bad + n))
+  rm -f "${TMPDIR:-/tmp}/tvcheck.$$"
 fi
 
 if [ -n "$LIST" ]; then

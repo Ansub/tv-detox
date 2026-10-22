@@ -1,7 +1,8 @@
 #!/bin/sh
 # Lists every app on your TV with the facts you need to clean it up safely. Changes nothing.
 #
-#   sh candidates.sh <TV_IP>
+#   sh candidates.sh <TV_IP>            how the TV is doing, then every app with a verdict
+#   sh candidates.sh <TV_IP> --health   just how the TV is doing (memory, swap, load, apps off)
 #
 # One line per app, grouped by verdict:
 #
@@ -10,23 +11,32 @@
 #   never    the TV needs it, or Android keeps it running whatever you do. Leave it on.
 #   keep     it carries a feature (casting, search, Live TV). Turn it off only if you don't use it.
 #   safe     commonly preinstalled junk: ads, sponsored rows, unused vendor and Google apps.
+#   app      an app on the TV's app list, or one you installed. Yours to keep, or to turn off if unused.
 #   review   nothing known about it. If you're not sure, leave it on.
 #
 # State is on or off, so what's already turned off never gets undone by accident.
 #
-# "never" also covers apps Android marks PERSISTENT: pm disable-user does not stick on those,
-# so they come back on their own. Read-only, safe to run any time, same on any Android TV or
-# Google TV. docs/debloat.md says what to do with the list.
+# The verdict comes from packages.txt, or from what the TV itself says about the app:
+#   - PERSISTENT apps are "never": pm disable-user does not stick on those, they come back on their own.
+#   - Apps that provide an HDMI, AV or tuner input are "never": without them the inputs are gone.
+#   - The keyboard in use is "never"; other keyboards are "keep". The screensaver in use is "keep".
+#   - An app that handles a button on the remote (TV, Input, Guide) is at least "keep", and says which.
+#   - Apps you installed, and apps on the TV's app list, are "app".
+# Read-only, safe to run any time, same on any Android TV or Google TV. docs/debloat.md says what to
+# do with the list, and apply.sh makes the changes so undo.sh can put them back.
 set -e
 cd "$(dirname "$0")" 2>/dev/null || true
 
-TARGET="$1"
-[ -n "$TARGET" ] || { echo "Usage: sh candidates.sh <TV_IP>" >&2; exit 1; }
+TARGET="$1"; HEALTH_ONLY=
+[ "$2" = "--health" ] && HEALTH_ONLY=1
+[ -n "$TARGET" ] || { echo "Usage: sh candidates.sh <TV_IP> [--health]" >&2; exit 1; }
 command -v adb >/dev/null 2>&1 || {
   echo "adb is missing. Install platform-tools first:" >&2
   echo "  Mac:     brew install android-platform-tools" >&2
   echo "  Windows: https://developer.android.com/tools/releases/platform-tools" >&2
   exit 1; }
+[ -n "$HEALTH_ONLY" ] || [ -r packages.txt ] || {
+  echo "packages.txt is missing. Download the whole repository, not just this script." >&2; exit 1; }
 
 # An IP gets :5555 added; an adb serial (like emulator-5554) is used as is.
 case "$TARGET" in
@@ -42,57 +52,50 @@ sh_tv() { _rc=0; _out=$(adb -s "$TV" shell "$@" </dev/null 2>/dev/null) || _rc=$
 # If the TV drops off halfway, stop: a half-read list would give wrong verdicts.
 lost() { echo "Lost the connection to $TV while reading the app list. Nothing was changed. Run it again." >&2; exit 1; }
 
-# The TV needs these to start, or to keep working once it has.
-NEVER="com.google.android.gms com.google.android.gsf com.android.vending
-com.android.tv.settings com.android.settings com.android.systemui
-com.android.providers.settings com.android.settings.intelligence com.android.shell
-com.android.packageinstaller com.google.android.packageinstaller
-com.google.android.permissioncontroller com.android.bluetooth com.android.externalstorage
-com.android.providers.media com.android.providers.media.module com.android.providers.downloads
-com.android.keychain com.android.inputdevices com.android.location.fused com.android.se
-com.android.providers.tv com.android.providers.contacts com.android.providers.calendar
-com.android.networkstack.inprocess com.android.networkstack.permissionconfig
-com.android.certinstaller com.android.companiondevicemanager com.android.dynsystem
-com.android.statementservice com.android.vpndialogs com.android.wallpaperbackup
-com.android.backupconfirm com.android.sharedstoragebackup com.android.localtransport
-com.android.proxyhandler com.android.pacprocessor com.android.captiveportallogin
-com.dolby.android.audio.service
-com.google.android.inputmethod.latin com.android.inputmethod.latin com.google.android.leanback.ime
-com.tcl.inputmethod.international com.android.providers.userdictionary
-com.google.android.tungsten.setupwraith com.google.android.onetimeinitializer
-com.google.android.partnersetup com.android.provision com.android.tv.provision com.android.managedprovisioning
-com.tcl.suspension com.tcl.tvinput com.tcl.providers.config com.tcl.useragreement
-com.tcl.settings com.tcl.tcl_bt_rcu_service com.google.android.apps.tv.launcherx"
+tmp=$(mktemp -d 2>/dev/null || mktemp -d -t tvcand)
+trap 'rm -rf "$tmp"' EXIT
 
-# Turn off only if you don't use the feature they carry.
-KEEP="com.google.android.apps.mediashell com.google.android.katniss
-com.google.android.tv.assistant com.google.android.marvin.talkback
-com.google.android.tv.remote.service com.google.android.tts
-com.google.android.syncadapters.contacts com.google.android.syncadapters.calendar
-com.ansub.tvhome com.google.android.webview com.tcl.android.webview
-com.tcl.tv com.tcl.micmanager
-com.android.dreams.basic com.google.android.apps.tv.dreamx"
-
-# Commonly preinstalled junk: ads, sponsored rows, unused vendor and Google apps.
-SAFE="com.google.android.tvrecommendations com.google.android.backdrop
-com.google.android.videos com.google.android.youtube.tvmusic com.google.android.play.games
-com.google.android.feedback
-com.android.printspooler com.android.htmlviewer com.android.soundpicker
-com.tcl.waterfall.overseas com.tcl.esticker com.tcl.partnercustomizer
-com.tcl.messagebox com.tcl.smartalexa com.tcl.copydatatotv com.tcl.audioplayer
-com.tcl.imageplayer com.tcl.keyhelp com.tcl.usercenter
-com.tcl.dashboard com.tcl.ttvs com.tcl.micmanager com.tcl.factory.view"
-
-dump=$(sh_tv dumpsys package) || lost
+# ---- How the TV is doing: the "before" to compare with after the cleanup and a restart ----
 all=$(sh_tv pm list packages) || lost
 off=$(sh_tv pm list packages -d) || lost
-printf '%s\n' "$dump" | grep -q 'Package \[' || lost
-printf '%s\n' "$all" | grep -q '^package:' || lost
+case "$all" in *package:*) ;; *) lost ;; esac
 all=$(printf '%s\n' "$all" | sed -n 's/^package://p')
 off=$(printf '%s\n' "$off" | sed -n 's/^package://p')
 
-tmp=$(mktemp -d 2>/dev/null || mktemp -d -t tvcand)
-trap 'rm -rf "$tmp"' EXIT
+mb() { awk -v kb="${1:-0}" 'BEGIN { printf "%d", kb / 1024 }'; }
+mem=$(sh_tv cat /proc/meminfo) || mem=
+total=$(printf '%s\n' "$mem" | awk '/^MemTotal:/ {print $2}')
+avail=$(printf '%s\n' "$mem" | awk '/^MemAvailable:/ {print $2}')
+swapt=$(printf '%s\n' "$mem" | awk '/^SwapTotal:/ {print $2}')
+swapf=$(printf '%s\n' "$mem" | awk '/^SwapFree:/ {print $2}')
+secs=$(sh_tv cat /proc/uptime | cut -d. -f1)
+load=$(sh_tv cat /proc/loadavg | cut -d' ' -f1)
+cores=$(sh_tv cat /sys/devices/system/cpu/present | awk -F- '{print ($2 == "" ? 1 : $2 + 1)}')
+home=$(sh_tv cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -1 | sed 's|/.*||')
+echo "$(sh_tv getprop ro.product.model) ($(sh_tv getprop ro.product.manufacturer), $(sh_tv getprop ro.board.platform)), Android $(sh_tv getprop ro.build.version.release)"
+if [ -n "$total" ]; then
+  line="Memory: $(mb "$avail") MB free of $(mb "$total") MB"
+  [ "${swapt:-0}" -gt 0 ] && line="$line, swap $(mb $((swapt - swapf))) MB of $(mb "$swapt") MB in use"
+  echo "$line"
+fi
+if [ -n "$secs" ]; then
+  busy=""
+  if [ -n "$load" ] && [ -n "$cores" ] && [ "$(awk -v l="$load" -v c="$cores" 'BEGIN {print (l > c * 1.5)}')" = 1 ]; then
+    # Some TVs (Realtek) keep a score of firmware threads stuck waiting on hardware. They count in
+    # the load but use no CPU, so a high load there says nothing about the apps.
+    stuck=$(sh_tv ps -A -T -o STAT | grep -c '^D' || true)
+    if [ "${stuck:-0}" -gt 0 ]; then busy=" ($stuck of it is firmware threads waiting on hardware, not apps: go by memory and swap)"
+    else busy=" (busy: above $cores means waiting)"; fi
+  fi
+  echo "Up $((secs / 86400)) days $((secs % 86400 / 3600)) h, load $load on $cores cores$busy"
+fi
+echo "Apps: $(printf '%s\n' "$all" | grep -c .) installed, $(printf '%s\n' "$off" | grep -c .) turned off. Home opens ${home:-?}."
+[ -z "$HEALTH_ONLY" ] || exit 0
+echo
+
+# ---- What the TV says about each app ----
+dump=$(sh_tv dumpsys package) || lost
+case "$dump" in *"Package ["*) ;; *) lost ;; esac
 
 # One call reads every package's flags, so this stays quick on a slow TV.
 printf '%s\n' "$dump" | awk '
@@ -103,107 +106,73 @@ printf '%s\n' "$dump" | awk '
 printf '%s\n' "$all" > "$tmp/all"
 printf '%s\n' "$off" > "$tmp/off"
 
-# Plain-English names, so the list reads like a list of apps and not package names.
-cat > "$tmp/names" <<'EOF'
-com.google.android.gms	Google Play services
-com.google.android.gsf	Google services framework
-com.android.vending	Google Play Store
-com.android.tv.settings	TV Settings
-com.android.settings	Settings
-com.android.systemui	System UI
-com.android.bluetooth	Bluetooth
-com.google.android.apps.mediashell	Google Cast, casting from your phone
-com.google.android.katniss	Google TV search and voice
-com.google.android.tv.assistant	Google Assistant
-com.google.android.marvin.talkback	TalkBack screen reader
-com.google.android.tv.remote.service	Phone remote control
-com.google.android.inputmethod.latin	Gboard keyboard
-com.android.inputmethod.latin	Android keyboard
-com.google.android.tts	Text to speech
-com.google.android.tvrecommendations	Google TV sponsored row
-com.google.android.backdrop	Google TV backdrop ads
-com.google.android.videos	Google TV, Play Movies
-com.google.android.youtube.tvmusic	YouTube Music
-com.google.android.play.games	Play Games
-com.google.android.youtube.tv	YouTube
-com.google.android.feedback	Google feedback
-com.google.android.onetimeinitializer	One-time setup helper
-com.google.android.partnersetup	Partner app setup
-com.google.android.syncadapters.contacts	Contacts sync
-com.google.android.syncadapters.calendar	Calendar sync
-com.android.printspooler	Printing
-com.android.dreams.basic	Basic screensaver
-com.google.android.apps.tv.dreamx	Google TV screensaver
-com.android.htmlviewer	HTML file viewer
-com.netflix.ninja	Netflix
-com.amazon.amazonvideo.livingroom	Prime Video
-com.tcl.waterfall.overseas	TCL content and ads feed
-com.tcl.esticker	TCL e-sticker
-com.tcl.partnercustomizer	TCL launcher customizer
-com.tcl.suspension	TCL input picker
-com.tcl.messagebox	TCL message box
-com.tcl.smartalexa	TCL Alexa
-com.tcl.copydatatotv	TCL phone migration
-com.tcl.audioplayer	TCL audio player
-com.tcl.imageplayer	TCL picture player
-com.tcl.videoplayer	TCL video player
-com.tcl.keyhelp	TCL key help
-com.tcl.useragreement	TCL user agreement
-com.tcl.usercenter	TCL user centre
-com.tcl.dashboard	TCL dashboard
-com.tcl.ttvs	TCL analytics and Alexa hooks
-com.tcl.providers.config	TCL settings store
-com.tcl.settings	TCL settings
-com.tcl.tvinput	TV input framework
-com.tcl.tv	Live TV
-com.tcl.tcl_bt_rcu_service	Bluetooth remote
-com.google.android.tvlauncher	Google TV home screen
-com.google.android.apps.tv.launcherx	Google TV home screen
-com.google.android.leanbacklauncher	Android TV home screen
-com.google.android.tungsten.setupwraith	Google TV setup
-com.dolby.android.audio.service	Dolby audio
-com.ansub.tvhome	TV Detox home screen
-com.tcl.inputmethod.international	TV keyboard
-com.google.android.webview	Web pages inside apps
-com.tcl.android.webview	Web pages inside apps
-com.google.android.apps.nbu.smartconnect.tv	Google TV phone pairing
-com.android.providers.userdictionary	Keyboard dictionary
-EOF
+# Apps that provide a hardware input (HDMI, AV, tuner): their input ids end in /HW… or /HDMI….
+sh_tv dumpsys tv_input | grep -o 'id=[^,} ]*' | sed 's/^id=//' | awk -F/ 'NF >= 3 { print $1 }' | sort -u > "$tmp/inputs"
+# Apps that handle a button on the remote, with the button's name (TV, TV_INPUT, GUIDE…).
+sh_tv dumpsys window policy | grep -o 'KEYCODE_[A-Z0-9_]*=[a-zA-Z0-9._]*' \
+  | sed 's/^KEYCODE_//; s/=/\t/' | awk -F'\t' '{ k[$2] = (k[$2] == "" ? $1 : k[$2] ", " $1) } END { for (p in k) print p "\t" k[p] " button" (k[p] ~ /,/ ? "s" : "") }' > "$tmp/keys"
+# The screensaver in use.
+sh_tv settings get secure screensaver_components | tr ',' '\n' | sed 's|/.*||' | grep -v '^null$' > "$tmp/dreams"
+# Keyboards, and the one in use.
+sh_tv ime list -s | sed 's|/.*||' | sort -u > "$tmp/imes"
+sh_tv settings get secure default_input_method | sed 's|/.*||' > "$tmp/ime"
+# Apps you installed.
+sh_tv pm list packages -3 | sed -n 's/^package://p' | sort -u > "$tmp/third"
+# Apps on the TV's app list, and apps that answer Home.
+sh_tv cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.LEANBACK_LAUNCHER \
+  | grep / | sed 's|/.*||; s/^ *//' | sort -u > "$tmp/leanback"
+sh_tv cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME \
+  | grep / | sed 's|/.*||; s/^ *//' | sort -u > "$tmp/home"
 
-# One line each: the awk that ships with macOS won't take a newline inside -v.
-NEVER=$(printf '%s' "$NEVER" | tr '\n' ' '); KEEP=$(printf '%s' "$KEEP" | tr '\n' ' '); SAFE=$(printf '%s' "$SAFE" | tr '\n' ' ')
-awk -F'\t' -v never="$NEVER" -v keep="$KEEP" -v safe="$SAFE" -v tmp="$tmp" '
+# packages.txt: verdict, package, name. Comments and blank lines skipped.
+grep -v '^[[:space:]]*#' packages.txt | grep -v '^[[:space:]]*$' | tr -d '\r' > "$tmp/list"
+
+awk -F'\t' -v tmp="$tmp" '
+  function load(file, arr,   l) { while ((getline l < (tmp "/" file)) > 0) if (l != "") arr[l] = 1; close(tmp "/" file) }
   BEGIN {
-    n=split(never,x," "); for (i=1;i<=n;i++) if (x[i]!="") NV[x[i]]=1
-    n=split(keep,x," ");  for (i=1;i<=n;i++) if (x[i]!="") KP[x[i]]=1
-    n=split(safe,x," ");  for (i=1;i<=n;i++) if (x[i]!="") SF[x[i]]=1
-    while ((getline l < (tmp "/flags")) > 0) { split(l,y,"\t"); FL[y[1]]=y[2] }
-    while ((getline l < (tmp "/off")) > 0) OF[l]=1
-    while ((getline l < (tmp "/names")) > 0) { split(l,y,"\t"); NM[y[1]]=y[2] }
-    ORD["never"]=0; ORD["keep"]=1; ORD["safe"]=2; ORD["review"]=3
-    while ((getline l < (tmp "/all")) > 0) {
-      p=l; st=(p in OF) ? "off" : "on"
-      if (FL[p] ~ /PERSISTENT/) v="never"
-      else if (p in NV) v="never"
-      else if (p in KP) v="keep"
-      else if (p in SF) v="safe"
-      else v="review"
-      name=(p in NM) ? NM[p] : ""
-      if (FL[p] ~ /PERSISTENT/) name=(name=="" ? "" : name " ") "(Android keeps it running)"
+    while ((getline l < (tmp "/list")) > 0) { split(l, y, "\t"); LV[y[2]] = y[1]; NM[y[2]] = y[3] }
+    while ((getline l < (tmp "/flags")) > 0) { split(l, y, "\t"); FL[y[1]] = y[2] }
+    while ((getline l < (tmp "/keys")) > 0) { split(l, y, "\t"); KEYS[y[1]] = y[2] }
+    load("off", OF); load("inputs", IN); load("imes", IME); load("third", THIRD); load("leanback", LEAN); load("home", HOME)
+    load("dreams", DREAM)
+    getline DEFIME < (tmp "/ime")
+    ORD["never"] = 0; ORD["keep"] = 1; ORD["safe"] = 2; ORD["app"] = 3; ORD["review"] = 4
+    while ((getline p < (tmp "/all")) > 0) {
+      if (p == "") continue
+      st = (p in OF) ? "off" : "on"
+      v = (p in LV) ? LV[p] : ""; why = ""
+      if (FL[p] ~ /PERSISTENT/)      { v = "never"; why = "Android keeps it running" }
+      else if (v == "never")         { }
+      else if (v == "launcher")      { v = "never"; why = "the TV\047s home screen: only install.sh turns it off, with undo" }
+      else if (p in IN)              { v = "never"; why = "provides an HDMI, AV or tuner input" }
+      else if (p == DEFIME)          { v = "never"; why = "the keyboard in use" }
+      else if (p in DREAM)           { v = "keep"; why = "the screensaver in use" }
+      else if (v == "keep" || v == "safe" || v == "app") {
+        if (p in KEYS && v == "safe") { v = "keep"; why = "handles the " KEYS[p] " on the remote" }
+      }
+      else if (p in IME)             { v = "keep"; why = "a keyboard" }
+      else if (p in THIRD)           { v = "app"; why = "you installed it" }
+      else if (p in LEAN)            { v = "app"; why = "on the TV\047s app list" }
+      else if (p in HOME)            { v = "keep"; why = "answers Home" }
+      else if (p in KEYS)            { v = "keep"; why = "handles the " KEYS[p] " on the remote" }
+      else                           { v = "review" }
+      if (why == "" && p in KEYS) why = "handles the " KEYS[p] " on the remote"
+      name = NM[p]
+      if (why != "") name = (name == "" ? "" : name " ") "(" why ")"
       printf "%d\t%s\t%s\t%s\t%s\n", ORD[v], v, st, p, name
       C[v]++
     }
-    printf "SUMMARY\t%s\t%s\t%s\n", C["never"]+0, C["keep"]+0, C["safe"]+0 > (tmp "/summary")
-    printf "%d\n", C["review"]+0 >> (tmp "/summary")
+    printf "%d %d %d %d %d\n", C["never"] + 0, C["keep"] + 0, C["safe"] + 0, C["app"] + 0, C["review"] + 0 > (tmp "/summary")
     close(tmp "/summary")
     exit
   }
 ' | sort -k1,1n -k4,4 | cut -f2-
 
 [ -s "$tmp/summary" ] || { echo "Couldn't sort the app list. Nothing was changed." >&2; exit 1; }
-n() { awk -v k="$1" 'NR==1{print $k}' "$tmp/summary" 2>/dev/null; }
+# shellcheck disable=SC2046 # the five counts are meant to split
+set -- $(cat "$tmp/summary")
 echo
-echo "never $(n 2) | keep $(n 3) | safe $(n 4) | review $(awk 'NR==2{print $1}' "$tmp/summary" 2>/dev/null)"
+echo "never $1 | keep $2 | safe $3 | app $4 | review $5"
 echo
-echo "safe = commonly preinstalled junk. review = unknown, so leave it on unless you know it."
-echo "Before turning anything off, read docs/debloat.md and ask someone before every change."
+echo "safe = commonly preinstalled junk. app = yours to decide. review = unknown, so leave it on unless you know it."
+echo "Before turning anything off, read docs/debloat.md. Make the changes with apply.sh, so undo.sh can put them back."
