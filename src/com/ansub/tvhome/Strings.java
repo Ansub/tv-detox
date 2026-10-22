@@ -90,6 +90,11 @@ final class Strings {
             "Taşı", "Değiştir", "Ana ekrandan kaldır", "Kaldır", "Uygulama bilgisi",
             "Ok tuşlarıyla taşıyın, sonra OK'e basın", "Tüm uygulamalar zaten burada", "Uygulama ekle", "Değiştir: %s", "Duvar kağıdı", "TV ayarları", "Parlaklık",
         });
+        LANGS.put("uk", new String[] {
+            "Налаштування", "Додати додаток", "Мережа", "Офлайн", "Звук", "Зображення",
+            "Перемістити", "Замінити", "Прибрати з головного екрана", "Видалити", "Інформація про додаток",
+            "Переміщуйте стрілками, а потім натисніть OK", "Усі додатки вже тут", "Додати додаток", "Замінити %s", "Шпалери", "Налаштування телевізора", "Яскравість",
+        });
         LANGS.put("zh", new String[] { // Simplified Chinese
             "设置", "添加应用", "网络", "未联网", "声音", "图像",
             "移动", "替换", "从主屏幕移除", "卸载", "应用信息",
