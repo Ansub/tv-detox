@@ -91,6 +91,10 @@ public class MainActivity extends Activity {
     private static final String PLAY_STORE = "com.android.vending";
     private static final String SETTINGS = "settings";
     private static final String ADD = "add";
+    // Google TV Freeplay isn't an app: Google TV's home screen shows a tile that opens this link.
+    // It can go on the top row like an app, on TVs with Google TV's home screen.
+    private static final String FREEPLAY = "freeplay";
+    private static final String GOOGLE_TV = "com.google.android.apps.tv.launcherx";
     private static final String[] EDIT_ITEMS = {"Move", "Replace", "Remove from home", "Uninstall"};
     private static final String[] EDIT_ITEMS_SYSTEM = {"Move", "Replace", "Remove from home", "App info"};
     private static final int PER_ROW = 6, MAX_INPUTS = 4;
@@ -513,15 +517,13 @@ public class MainActivity extends Activity {
             Intent li = launchIntent(pm, pkg);
             if (li == null) continue;
             Drawable banner = null;
-            try {
+            if (!FREEPLAY.equals(pkg)) try {
                 banner = pm.getActivityBanner(li);
                 if (banner == null) banner = pm.getApplicationBanner(pkg);
             } catch (Exception ignored) {}
-            String label = pkg;
-            try { label = pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString(); } catch (Exception ignored) {}
+            String label = labelOf(pkg);
             // Apps without a TV banner get a plain tile with their normal icon.
-            Drawable icon = null;
-            if (banner == null) try { icon = pm.getApplicationIcon(pkg); } catch (Exception ignored) {}
+            Drawable icon = banner == null ? iconOf(pkg) : null;
             int i = rowApps.size();
             rowApps.add(pkg);
             addTile(root, pkg, label, banner, null, icon, gridX(i), gridY(i), w, h);
@@ -774,6 +776,7 @@ public class MainActivity extends Activity {
         } else {
             i = launchIntent(getPackageManager(), key);
             if (i == null) return;
+            if (FREEPLAY.equals(key)) HomeButton.passThrough();
         }
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try { startActivity(i); } catch (Exception ignored) {}
@@ -1093,7 +1096,7 @@ public class MainActivity extends Activity {
             if (which == 0) startMove(key);
             else if (which == 1) showAddMenu(index);
             else if (which == 3) {
-                Uri pkg = Uri.parse("package:" + key);
+                Uri pkg = Uri.parse("package:" + (FREEPLAY.equals(key) ? GOOGLE_TV : key));
                 try { startActivity(user ? new Intent(Intent.ACTION_DELETE, pkg)
                         : new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkg)); }
                 catch (Exception ignored) {}
@@ -1283,6 +1286,7 @@ public class MainActivity extends Activity {
                 if (!byLabel.containsKey(label)) byLabel.put(label, p);
             }
         }
+        if (!rowApps.contains(FREEPLAY) && launchIntent(pm, FREEPLAY) != null) byLabel.put(labelOf(FREEPLAY), FREEPLAY);
         if (byLabel.isEmpty()) {
             panel(Strings.t("Every app is already here"), Collections.singletonList("OK"), which -> {});
             return;
@@ -1290,7 +1294,7 @@ public class MainActivity extends Activity {
         final List<String> pkgs = new ArrayList<>(byLabel.values());
         String title = replaceIndex < 0 ? Strings.t("Add an app")
                 : String.format(Strings.t("Replace %s"), labelOf(rowApps.get(replaceIndex)));
-        panel(title, new ArrayList<>(byLabel.keySet()), pos -> fit(pm.getApplicationIcon(pkgs.get(pos)), px(48), px(48)),
+        panel(title, new ArrayList<>(byLabel.keySet()), pos -> fit(iconOf(pkgs.get(pos)), px(48), px(48)),
                 px(48), -1, null, which -> {
             if (replaceIndex < 0) rowApps.add(pkgs.get(which));
             else rowApps.set(replaceIndex, pkgs.get(which));
@@ -1301,9 +1305,22 @@ public class MainActivity extends Activity {
     }
 
     private String labelOf(String pkg) {
+        if (FREEPLAY.equals(pkg)) return "Google TV Freeplay";
         PackageManager pm = getPackageManager();
         try { return pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString(); }
         catch (Exception e) { return pkg; }
+    }
+
+    // Freeplay's logo comes from Google's servers, so it isn't in this app: a build can add its own
+    // as res/drawable/freeplay.png, otherwise it gets a play icon.
+    private Drawable iconOf(String pkg) {
+        if (FREEPLAY.equals(pkg)) {
+            int id = getResources().getIdentifier("freeplay", "drawable", getPackageName());
+            try { if (id != 0) return getResources().getDrawable(id, getTheme()); } catch (Exception ignored) {}
+            return new LineIcon(LineIcon.PLAY);
+        }
+        try { return getPackageManager().getApplicationIcon(pkg); }
+        catch (Exception e) { return null; }
     }
 
     // Saves the top row as the app list, so it no longer follows apps.txt.
@@ -1437,6 +1454,10 @@ public class MainActivity extends Activity {
     }
 
     private static Intent launchIntent(PackageManager pm, String pkg) {
+        if (FREEPLAY.equals(pkg)) {
+            Intent f = new Intent(Intent.ACTION_VIEW, Uri.parse("https://tv.google.com/freeplay/default")).setPackage(GOOGLE_TV);
+            return pm.resolveActivity(f, 0) != null ? f : null;
+        }
         Intent i = pm.getLeanbackLaunchIntentForPackage(pkg);
         return i != null ? i : pm.getLaunchIntentForPackage(pkg);
     }

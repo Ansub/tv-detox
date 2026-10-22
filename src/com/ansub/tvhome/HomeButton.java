@@ -22,12 +22,28 @@ public class HomeButton extends AccessibilityService {
             "com.google.android.apps.tv.launcherx", "com.google.android.apps.tv.launcherx.home.HomeActivity");
     // Debounce duplicate events until the activity resumes.
     private static long lastOpened = -500;
+    // A Google TV page (like Freeplay) was opened from this home screen. Google TV passes through its
+    // home screen on the way, so that's let through until the page opens, for 10 seconds at most.
+    private static volatile long passUntil;
+
+    static void passThrough() {
+        passUntil = SystemClock.elapsedRealtime() + 10000;
+    }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
-                || !GOOGLE_TV_HOME.getPackageName().equals(String.valueOf(event.getPackageName()))
-                || !GOOGLE_TV_HOME.getClassName().equals(String.valueOf(event.getClassName())) || !setupDone()) return;
+                || !GOOGLE_TV_HOME.getPackageName().equals(String.valueOf(event.getPackageName()))) return;
+        String window = String.valueOf(event.getClassName());
+        if (SystemClock.elapsedRealtime() < passUntil) {
+            // The link opens a gateway, then the home screen, then the page, with overlays in between
+            // that aren't screens. The page ends the pass, a second later in case the home screen's
+            // event arrives after it.
+            if (!GOOGLE_TV_HOME.getClassName().equals(window) && window.endsWith("Activity") && !window.contains(".gateway."))
+                passUntil = Math.min(passUntil, SystemClock.elapsedRealtime() + 1000);
+            return;
+        }
+        if (!GOOGLE_TV_HOME.getClassName().equals(window) || !setupDone()) return;
         SharedPreferences prefs = prefs(this);
         if (stayingOnGoogleTv(prefs)) return;
         long now = SystemClock.elapsedRealtime();
