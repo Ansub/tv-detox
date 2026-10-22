@@ -10,7 +10,12 @@ cd "$(dirname "$0")"
 [ -n "$JAVA_HOME" ] && export PATH="$JAVA_HOME/bin:$PATH"
 SDK=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}
 [ -n "$SDK" ] || for d in /opt/homebrew/share/android-commandlinetools "$HOME/Library/Android/sdk" "$HOME/Android/Sdk"; do [ -d "$d" ] && SDK=$d && break; done
-BT=$SDK/build-tools/34.0.0; JAR=$SDK/platforms/android-34/android.jar
+# Releases are built with platform 34 and build-tools 34.0.0. For a local build a newer platform will
+# do, and so will newer build-tools: BUILD_TOOLS=36.0.0 sh build.sh (build-tools 34's d8 can't read
+# classes from a Java 21 javac).
+BT=$SDK/build-tools/${BUILD_TOOLS:-34.0.0}; JAR=$SDK/platforms/android-34/android.jar
+[ -f "$JAR" ] || JAR=$(ls "$SDK"/platforms/android-*/android.jar 2>/dev/null | sort -V | tail -1)
+[ -d "$BT" ] || BT=$(ls -d "$SDK"/build-tools/*/ 2>/dev/null | sort -V | tail -1 | sed 's|/$||')
 [ -f "$JAR" ] && [ -d "$BT" ] || { echo "Android SDK not found. Set ANDROID_HOME, and install platforms;android-34 and build-tools;34.0.0." >&2; exit 1; }
 
 rm -rf out; mkdir -p out/classes out/dex out/gen/com/ansub/tvhome
