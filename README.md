@@ -272,7 +272,7 @@ adb shell ime set <the keyboard you noted>
 
 Tested on a OnePlus TV E00 (QLED, Android TV 11 with Google TV's home screen, 2.9 GB of RAM). The cleanup was followed by a restart, and the TV started normally and opened this home screen by itself. Free memory went from about 1.34 GB to about 1.67 GB, though part of that is just from restarting.
 
-**Home screen.** OnePlus ships two home screens: OxygenPlay (`com.oneplus.tv.launcher`) and Google TV's (`com.google.android.apps.tv.launcherx`). Both turned off without trouble. As on the TCL above, Home then opened Google TV's setup app, and `GOOGLE_TV=1 YES_SETUP=1` fixed it.
+**Home screen.** OnePlus ships two home screens: OxygenPlay (`com.oneplus.tv.launcher`) and Google TV's (`com.google.android.apps.tv.launcherx`). Turning off Google TV's is up to you and at your own risk: it worked on this TV, but it has left some Google TVs (like Chromecast) stuck restarting. Only try it if you can reconnect over USB or port 5555. If you leave it on, the cleanup still works and Home keeps opening Google TV's home screen. If you do turn it off and Home opens Google TV's setup app, run `install.sh` again with `GOOGLE_TV=1 YES_SETUP=1`, the same fix as on the TCL above.
 
 **Safe to turn off**, if you don't use them:
 
@@ -289,8 +289,6 @@ Tested on a OnePlus TV E00 (QLED, Android TV 11 with Google TV's home screen, 2.
 | Bluetooth speaker mode | `com.heytap.tv.btspeaker` |
 | Camera | `com.heytap.tv.camera` |
 | AirScreen | `com.ionitech.airscreen` |
-
-Preinstalled partner apps (Indian models), also safe off if you don't use them: ahaflix (`ahaflix.tv`), discovery+ (`com.discoveryplus.tv.android`), Eros Now (`com.eros.now`), Jio On Demand (`com.jio.media.stb.ondemand`), JioPages (`com.jio.web.androidtv`), JioGames (`com.jiostb.jiogames`), Lionsgate Play (`com.lionsgateplay.videoapp`), MX Player (`com.mxtech.videoplayer.television`), Plex (`com.plexapp.android`), Spotify (`com.spotify.tv.android`), TCL browser (`com.tcl.browser`), Voot (`com.viacom18.tv.voot`) and Hoichoi (`com.viewlift.hoichoi`).
 
 **Keep these on:**
 
