@@ -27,10 +27,6 @@ Coverage of [TV Detox](https://github.com/Ansub/tv-detox) and Ansub Khan. Newest
 
 - [Estadão / TecMundo](https://www.estadao.com.br/tecmundo/produto-e-review/usuarios-estao-deixando-suas-smart-tvs-mais-rapidas-com-ia-confira-como-fazer/) — Oct 20, 2026. Names Ansub; links TV Detox.
 
-## French
-
-- [PhonAndroid](https://www.phonandroid.com/supprimer-les-publicites-sur-google-tv-en-creant-un-programme-par-ia-la-fausse-bonne-idee.html) — Oct 21, 2026. Names Ansub; links TV Detox.
-
 ## Korean
 
 - [AI Times](https://www.aitimes.com/news/articleView.html?idxno=216547) — Oct 22, 2026. Names Ansub (안섭 칸); links TV Detox.
