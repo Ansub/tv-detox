@@ -32,6 +32,10 @@ Coverage of [TV Detox](https://github.com/Ansub/tv-detox) and Ansub Khan. Newest
 - [AI Times](https://www.aitimes.com/news/articleView.html?idxno=216547) — Oct 22, 2026. Names Ansub (안섭 칸); links TV Detox.
 - [Wikitree](https://www.wikitree.co.kr/articles/1168141) — Oct 21, 2026. Names Ansub (안수브 칸).
 
+## Hindi
+
+- [Navbharat Times](https://navbharattimes.indiatimes.com/tech/gadgets-news/claude-ai-old-android-tv-feel-brand-new/articleshow/135023977.cms) — embeds Ansub's tweet; calls him "a user," not by name.
+
 ## Turkish
 
 - [LOG](https://www.log.com.tr/yapay-zeka-yavaslayan-android-tvleri-de-hizlandirabiliyor-video/) — Oct 19, 2026. Names Ansub.
