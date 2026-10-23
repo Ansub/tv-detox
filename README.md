@@ -21,6 +21,11 @@ Claude Code or Codex does the work. You just press OK on the remote.
 [![t3n](https://img.shields.io/badge/t3n-E6007E?style=for-the-badge)](https://t3n.de/news/claude-alter-fernseher-android-tv-1768831/)
 [![Tom's Guide](https://img.shields.io/badge/Tom's_Guide-E1261C?style=for-the-badge)](https://www.tomsguide.com/ai/people-are-using-ai-to-turn-their-smart-tvs-into-dumb-tvs-and-you-might-want-to-do-the-same)
 [![Yahoo Tech](https://img.shields.io/badge/Yahoo_Tech-6001D2?style=for-the-badge)](https://tech.yahoo.com/ai/article/sick-of-seeing-ads-and-clutter-on-your-smart-tv-the-internet-says-ai-can-fix-that-181417392.html)
+[![GIGA](https://img.shields.io/badge/GIGA-E2001A?style=for-the-badge)](https://www.giga.de/tech/ist-euer-smart-tv-zu-langsam-dieses-ki-tool-kann-helfen--01M5HH1C89TWAQX4FYXJBDBQAF)
+[![Computer Hoy](https://img.shields.io/badge/Computer_Hoy-0A64A0?style=for-the-badge)](https://computerhoy.20minutos.es/dispositivos/tv-detox-app-gratis-elimina-obsolescencia-programada-tu-smart-tv-claude-hace-trabajo-tu-solo-tienes-que-pulsar-ok-mando-distancia_7050469_0.html)
+[![AI Times](https://img.shields.io/badge/AI_Times-111111?style=for-the-badge)](https://www.aitimes.com/news/articleView.html?idxno=216547)
+
+[All press coverage →](press.md)
 
 <img src="docs/home-screen.png" alt="The TV Detox home screen" width="100%">
 
