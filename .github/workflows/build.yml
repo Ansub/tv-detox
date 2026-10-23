@@ -35,10 +35,16 @@ jobs:
           KEYSTORE: ${{ secrets.RELEASE_KEYSTORE != '' && 'release.jks' || 'key.jks' }}
           KEYSTORE_PASS: ${{ secrets.RELEASE_KEYSTORE_PASS || 'tvhome123' }}
         run: sh build.sh
+      - name: Java checks
+        run: sh test.sh
+      - name: Checksum
+        run: (cd out && sha256sum tvhome.apk > tvhome.apk.sha256)
       - uses: actions/upload-artifact@v4
         with:
           name: tvhome-apk
-          path: out/tvhome.apk
+          path: |
+            out/tvhome.apk
+            out/tvhome.apk.sha256
 
   emulator-test:
     needs: build
@@ -85,5 +91,5 @@ jobs:
       - env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" tvhome.apk --repo "$GITHUB_REPOSITORY" \
+          gh release create "$GITHUB_REF_NAME" tvhome.apk tvhome.apk.sha256 --repo "$GITHUB_REPOSITORY" \
             --title "$GITHUB_REF_NAME" --notes "Install with: sh install.sh <TV_IP>"

@@ -1,0 +1,194 @@
+# What each preinstalled app is, and whether it's safe to turn off.
+# Read by candidates.sh (verdicts), install.sh (launchers) and apply.sh (what it refuses).
+# docs/debloat.md explains the rules behind the verdicts.
+#
+# One app per line, three columns separated by tabs:
+#
+#   verdict   package   what it is, in plain words
+#
+#   never     the TV needs it to start or keep working. apply.sh refuses to turn it off.
+#   launcher  the TV's own home screen. Only install.sh turns it off, so undo.sh can put it back.
+#   keep      carries a feature you may use (casting, search, Live TV). Off only if you don't use it.
+#   safe      commonly preinstalled junk: ads, sponsored rows, store demos, unused vendor apps.
+#   app       an app on the TV's app list (Netflix, YouTube). Yours to keep, or to turn off if unused.
+#
+# Vendors rename and add apps all the time, so treat this as strong hints, not gospel. An app that
+# isn't here gets a verdict from what the TV says about it (see candidates.sh), or "review".
+# To add a TV: run candidates.sh, check what each "review" app does, and add a line here.
+
+# ---- Android and Google: what the TV needs ----
+never	com.google.android.gms	Google Play services
+never	com.google.android.gsf	Google services framework
+never	com.android.vending	Google Play Store
+never	com.android.tv.settings	TV Settings
+never	com.android.settings	Settings
+never	com.android.systemui	System UI
+never	com.android.providers.settings	Settings storage
+never	com.android.settings.intelligence	Settings search
+never	com.android.shell	adb shell (the connection from your laptop)
+never	com.android.packageinstaller	Installing apps
+never	com.google.android.packageinstaller	Installing apps
+never	com.google.android.permissioncontroller	App permissions
+never	com.android.bluetooth	Bluetooth
+never	com.android.externalstorage	USB storage
+never	com.android.providers.media	Media storage
+never	com.android.providers.media.module	Media storage
+never	com.android.providers.downloads	Downloads storage
+never	com.android.keychain	Certificates
+never	com.android.inputdevices	Keyboards and remotes
+never	com.android.location.fused	Location
+never	com.android.se	Secure element
+never	com.android.providers.tv	TV channels storage
+never	com.android.providers.contacts	Contacts storage
+never	com.android.providers.calendar	Calendar storage
+never	com.android.networkstack.inprocess	Network
+never	com.android.networkstack.permissionconfig	Network
+never	com.android.certinstaller	Certificates
+never	com.android.companiondevicemanager	Paired devices
+never	com.android.dynsystem	System updates
+never	com.android.statementservice	App links
+never	com.android.vpndialogs	VPN prompts
+never	com.android.wallpaperbackup	Backup
+never	com.android.backupconfirm	Backup
+never	com.android.sharedstoragebackup	Backup
+never	com.android.localtransport	Backup
+never	com.android.proxyhandler	Network proxy
+never	com.android.pacprocessor	Network proxy
+never	com.android.captiveportallogin	Wi-Fi sign-in pages
+never	com.dolby.android.audio.service	Dolby audio (no sound without it on some TVs)
+never	com.google.android.inputmethod.latin	Gboard keyboard
+never	com.android.inputmethod.latin	Android keyboard
+never	com.google.android.leanback.ime	Android TV keyboard
+never	com.android.providers.userdictionary	Keyboard dictionary
+never	com.google.android.tungsten.setupwraith	Google TV setup
+never	com.google.android.onetimeinitializer	One-time setup helper
+never	com.google.android.partnersetup	Partner app setup
+never	com.android.provision	First setup
+never	com.android.tv.provision	First setup
+never	com.android.managedprovisioning	First setup
+never	com.android.networkstack.tethering.inprocess	Network
+never	com.android.hotspot2.osulogin	Wi-Fi sign-in pages
+never	com.android.wifi.resources	Wi-Fi
+never	com.android.tv.globalkeyhandler.overlay	Remote buttons
+never	com.google.android.ext.services	Android system module
+never	com.google.android.ext.shared	Android system module
+never	com.google.android.modulemetadata	Android system module
+never	com.google.android.overlay.modules.ext.services	Android system module
+never	com.google.android.overlay.modules.modulemetadata.forframework	Android system module
+never	com.google.android.overlay.modules.permissioncontroller	Android system module
+never	com.google.android.overlay.modules.permissioncontroller.forframework	Android system module
+never	com.google.android.tv.frameworkpackagestubs	Android TV system stubs
+never	com.android.cts.ctsshim	Android test shim (empty, harmless)
+never	com.android.cts.priv.ctsshim	Android test shim (empty, harmless)
+keep	com.google.android.sss.authbridge	Google sign-in bridge
+safe	android.autoinstalls.config.rplus.device	List of apps to install at first setup
+
+# ---- Home screens: install.sh turns these off, undo.sh puts them back ----
+launcher	com.google.android.tvlauncher	Android TV home screen
+launcher	com.google.android.apps.tv.launcherx	Google TV home screen (on Google TV, leave it on: see the README)
+launcher	com.google.android.leanbacklauncher	Android TV home screen (older TVs)
+launcher	com.mitv.tvhome	Xiaomi home screen
+launcher	com.amazon.tv.launcher	Fire TV home screen
+
+# ---- Google: features you may use ----
+keep	com.google.android.apps.mediashell	Google Cast, casting from your phone
+keep	com.google.android.katniss	Google TV search and voice
+keep	com.google.android.tv.assistant	Google Assistant
+keep	com.google.android.marvin.talkback	TalkBack screen reader
+keep	com.google.android.tv.remote.service	Phone remote control
+keep	com.google.android.tts	Text to speech
+keep	com.google.android.syncadapters.contacts	Contacts sync
+keep	com.google.android.syncadapters.calendar	Calendar sync
+keep	com.google.android.webview	Web pages inside apps
+keep	com.google.android.backdrop	Ambient mode screensaver: Google's photos, your Google Photos, weather (keep one screensaver on an OLED TV)
+keep	com.android.dreams.basic	Basic screensaver, colours only (keep one screensaver on an OLED TV)
+keep	com.google.android.apps.tv.dreamx	Google TV screensaver (keep it on an OLED TV)
+keep	com.google.android.apps.nbu.smartconnect.tv	Google TV phone pairing
+keep	com.ansub.tvhome	TV Detox home screen
+
+# ---- Google: commonly safe ----
+safe	com.google.android.tvrecommendations	Google TV sponsored row
+safe	com.google.android.videos	Google TV, Play Movies
+safe	com.google.android.youtube.tvmusic	YouTube Music
+safe	com.google.android.play.games	Play Games
+safe	com.google.android.feedback	Google feedback
+safe	com.android.printspooler	Printing
+safe	com.android.htmlviewer	HTML file viewer
+safe	com.android.soundpicker	Ringtone picker
+
+# ---- Apps on the app list ----
+app	com.google.android.youtube.tv	YouTube
+app	com.netflix.ninja	Netflix
+app	com.amazon.amazonvideo.livingroom	Prime Video
+app	com.disney.disneyplus	Disney+
+app	com.hulu.livingroomplus	Hulu
+app	com.wbd.stream	Max
+app	com.android.tv	Live TV: channels and HDMI inputs
+
+# ---- TCL (Google TV) ----
+never	com.tcl.tvinput	HDMI inputs and the tuner
+never	com.tcl.suspension	Input picker
+never	com.tcl.inputmethod.international	TV keyboard
+never	com.tcl.providers.config	Settings store other TCL apps read
+never	com.tcl.useragreement	Privacy switches
+never	com.tcl.settings	TCL settings
+never	com.tcl.tcl_bt_rcu_service	Bluetooth remote
+keep	com.tcl.tv	Live TV, channel guide and scanning
+keep	com.tcl.micmanager	Microphone
+keep	com.tcl.android.webview	Web pages inside apps
+keep	com.tcl.videoplayer	USB video player
+safe	com.tcl.waterfall.overseas	TCL content and ads feed
+safe	com.tcl.esticker	Store demo
+safe	com.tcl.exhibit	Store demo
+safe	com.tcl.partnercustomizer	TCL Channel and launcher rows (also the TCL button)
+safe	com.tcl.messagebox	Notifications and promos
+safe	com.tcl.smartalexa	Alexa built-in
+safe	com.tcl.copydatatotv	Phone migration
+safe	com.tcl.audioplayer	USB audio player
+safe	com.tcl.imageplayer	USB picture player
+safe	com.tcl.keyhelp	Remote key help
+safe	com.tcl.usercenter	TCL account
+safe	com.tcl.dashboard	TCL quick settings panel
+safe	com.tcl.ttvs	TCL analytics and Alexa hooks
+safe	com.tcl.factory.view	Factory menu
+safe	com.tcl.ocean.instructions	Built-in manual
+safe	com.tcl.channelplus	TCL Channel (free channels with ads)
+safe	com.tcl.magiconnectfree	Phone link
+safe	com.tcl.repairguide	Repair guide
+safe	com.tcl.logkit	Logs
+safe	com.tcl.miracast	Screen mirroring
+safe	com.tcl.interactive	TCL interactive and ads service
+safe	com.tcl.gamebar	Game bar for consoles
+safe	com.tcl.gallery	Photo viewer
+safe	com.tcl.ui_mediaCenter	USB media player
+safe	com.tcl.guard	App manager
+safe	com.tcl.t_solo	Bluetooth "listen alone"
+
+# ---- Realtek RTD28xx TVs (Edenwood, Konka and other budget Android TV 11 sets) ----
+# From an Edenwood 4K Android TV made by Konka. Verdicts are from what each app does on that TV.
+never	com.realtek.tv.passthrough	HDMI and AV inputs
+never	com.realtek.dtv	Digital tuner (DVB)
+never	com.realtek.hw.configprovider	Hardware settings other Realtek apps read
+never	com.realtek.menu	The TV's picture and sound menu
+never	com.realtek.statusbar	Input and volume overlay
+never	com.realtek.rtkvirtualkeyboard	TV keyboard
+never	com.realtek.setupwizard	First setup
+never	com.realtek.keyintercept	Remote keys and fallback home
+never	com.realtek.tv.suspend	Standby
+keep	com.realtek.tv.atv	Analogue tuner (antenna without a decoder)
+keep	com.realtek.tv.atsc	ATSC tuner (USA, Canada, Mexico, South Korea)
+keep	com.realtek.tv.isdb	ISDB tuner (Japan, Brazil)
+keep	com.realtek.dtmb	DTMB tuner (China)
+keep	com.realtek.media.notification	Media notifications
+keep	com.realtek.display.monitor	Display monitor
+keep	com.rtk.mediabrowser	USB media player
+safe	com.realtek.leanbacklauncher.partnercustomizer	Vendor rows on the Google home screen
+safe	com.realtek.retailmode	Store demo
+safe	com.realtek.factorymenu	Factory menu
+safe	com.realtek.tvfactory	Factory tools
+safe	com.rtk.engmenu	Engineering menu
+safe	com.toptech.factorytoolsboe	Factory tools
+safe	com.toptech.factorytoolsgtv	Factory tools
+safe	com.toptech.tvfactory	Factory tools
+safe	com.konka.livewallpaper	Konka live wallpaper
+safe	com.vewd.core.service	Vewd (Opera) TV app store service

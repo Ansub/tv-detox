@@ -77,11 +77,12 @@ public class MainActivity extends Activity {
     private static final String[] EDIT_ITEMS_SYSTEM = {"Move", "Replace", "Remove from home", "App info"};
     private static final int PER_ROW = 6, MAX_INPUTS = 4;
 
-    // Settings shortcuts: name, label, icon. Tile keys are QUICK + name.
+    // Settings shortcuts: name, label, icon. Tile keys are QUICK + name. "settings" puts the Settings
+    // menu up by the clock as a gear, and takes its tile out of the bottom row.
     private static final String QUICK = "quick:";
-    private static final String[] QUICK_NAMES = {"bluetooth", "sound", "picture"};
-    private static final String[] QUICK_LABELS = {"Bluetooth", "Sound", "Picture"};
-    private static final int[][] QUICK_ICONS = {LineIcon.BLUETOOTH, LineIcon.SOUND, LineIcon.PICTURE};
+    private static final String[] QUICK_NAMES = {"bluetooth", "sound", "picture", SETTINGS};
+    private static final String[] QUICK_LABELS = {"Bluetooth", "Sound", "Picture", "Settings"};
+    private static final int[][] QUICK_ICONS = {LineIcon.BLUETOOTH, LineIcon.SOUND, LineIcon.PICTURE, LineIcon.SETTINGS};
     private static final String NETWORK = "network";
     private static final int OFFLINE = 0, ETHERNET = 4; // network states; 1 to 3 are Wi-Fi bars
     // TCL keeps its own Picture and Sound panels in a service; Android's Sound page is missing there.
@@ -98,28 +99,6 @@ public class MainActivity extends Activity {
     // Android TV 11 and later (Google TV too) has no Display page, but its "Display & Sound" page holds Picture.
     private static final String[] TV_DISPLAY_SOUND = {"com.android.tv.settings",
             "com.android.tv.settings.device.displaysound.DisplaySoundActivity"};
-    // Wallpapers, saved by name: a gradient top to bottom, then a glow from the top left and one from
-    // the bottom right. Dark ones first, then bright ones that get darker towards the bottom, so the
-    // white labels stay easy to read. Only colours, no images, so every one costs the same as Dusk,
-    // the default.
-    private static final String[] WALLPAPER_NAMES = {"Dusk", "Midnight", "Plum", "Forest", "Graphite", "Ocean", "Ember",
-            "Sunset", "Lagoon", "Aurora", "Coral", "Iris", "Meadow", "Gold"};
-    private static final int[][] WALLPAPERS = {
-        {0xFF15100F, 0xFF0A0809, 0xFF050405, 0x36FF8048, 0x2EAA3C8C},
-        {0xFF0E1220, 0xFF080A13, 0xFF040509, 0x384A6CFF, 0x2E5A3CC8},
-        {0xFF170E19, 0xFF0C070D, 0xFF050306, 0x38C050B4, 0x2E6440D2},
-        {0xFF0C150F, 0xFF070C09, 0xFF030604, 0x3050B478, 0x28289682},
-        {0xFF151617, 0xFF0B0C0D, 0xFF050506, 0x1CFFFFFF, 0x16A0B4C8},
-        {0xFF0A1517, 0xFF060C0E, 0xFF030607, 0x3426B4C8, 0x2E2A64C0},
-        {0xFF190D08, 0xFF0D0605, 0xFF060303, 0x40FF5A24, 0x32C8283C},
-        {0xFF8C3A5E, 0xFF5E2348, 0xFF22101E, 0xA0FF8A4C, 0x80E0457A},
-        {0xFF14588E, 0xFF15366E, 0xFF0A1632, 0x9030C8E0, 0x807A4CE0},
-        {0xFF0F4048, 0xFF0F2E3A, 0xFF08141C, 0x9038E0A0, 0x90A050F0},
-        {0xFFC0604E, 0xFF8A3456, 0xFF2E1230, 0x90FFB070, 0x70E04090},
-        {0xFF5A3CAE, 0xFF3A2A84, 0xFF16123A, 0x90C080FF, 0x804A7CFF},
-        {0xFF2E6E4C, 0xFF1C4A40, 0xFF0A201E, 0x90A8E070, 0x6030A8A8},
-        {0xFFB07624, 0xFF86401E, 0xFF2A1410, 0x90FFD060, 0x70FF5040},
-    };
     private float scale = 1f;
 
     private static Typeface regular, semibold;
@@ -262,7 +241,7 @@ public class MainActivity extends Activity {
     private List<String> appList(PackageManager pm) {
         List<String> out = new ArrayList<>();
         String saved = getSharedPreferences(PREFS, 0).getString("apps", null);
-        String[] wanted = saved != null ? saved.split("[,\\s]+") : Apps.LIST;
+        List<String> wanted = saved != null ? Labels.packageList(saved) : Arrays.asList(Apps.LIST);
         for (String p : wanted) if (!p.isEmpty() && !out.contains(p) && launchIntent(pm, p) != null) out.add(p);
         if (saved == null) {
             // Top up with other TV apps people installed (or updated), skipping launchers and system tools.
@@ -319,60 +298,25 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() { /* home screen: nothing to go back to */ }
 
-    // Static gradient, drawn once by the window: no extra view, no animation.
-    private Drawable background(int[] c) {
-        GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[] {c[0], c[1], c[2]});
-        GradientDrawable top = radial(c[3], 0.08f, -0.12f, px(1250));
-        GradientDrawable bottom = radial(c[4], 1.0f, 1.1f, px(1000));
-        for (GradientDrawable g : new GradientDrawable[] {base, top, bottom}) g.setDither(true);
-        return new LayerDrawable(new Drawable[] {base, top, bottom});
-    }
-
-    // The saved wallpaper, as an index into WALLPAPERS (Dusk if none is saved).
+    // The saved wallpaper, as an index into Wallpapers.COLORS (Dusk if none is saved).
     private int wallpaper() {
-        String saved = getSharedPreferences(PREFS, 0).getString("wallpaper", null);
-        return Math.max(0, Arrays.asList(WALLPAPER_NAMES).indexOf(saved));
+        return Wallpapers.indexOf(getSharedPreferences(PREFS, 0).getString("wallpaper", null));
     }
 
     private void showWallpaper(int i) {
-        getWindow().setBackgroundDrawable(background(WALLPAPERS[i]));
+        getWindow().setBackgroundDrawable(Wallpapers.background(Wallpapers.COLORS[i], scale));
     }
 
     // The wallpapers, each with a small dot of its colours. Moving through the list shows each one
     // behind the panel; OK keeps it, Back goes back to the one before.
     private void showWallpapers() {
         final int size = px(40);
-        panel(Strings.t("Wallpaper"), Arrays.asList(WALLPAPER_NAMES), pos -> {
-            int[] c = WALLPAPERS[pos];
-            GradientDrawable dot = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                    new int[] {glow(c[3], c[0]), c[1], glow(c[4], c[0])});
-            dot.setShape(GradientDrawable.OVAL);
-            dot.setStroke(Math.max(1, px(2)), 0x26FFFFFF);
-            dot.setSize(size, size);
-            return dot;
-        }, size, wallpaper(), this::showWallpaper, which -> {
-            getSharedPreferences(PREFS, 0).edit().putString("wallpaper", WALLPAPER_NAMES[which]).apply();
+        panel(Strings.t("Wallpaper"), Arrays.asList(Wallpapers.NAMES),
+                pos -> Wallpapers.swatch(Wallpapers.COLORS[pos], size, Math.max(1, px(2))),
+                size, wallpaper(), this::showWallpaper, which -> {
+            getSharedPreferences(PREFS, 0).edit().putString("wallpaper", Wallpapers.NAMES[which]).apply();
             showWallpaper(which);
         });
-    }
-
-    // A glow colour made solid over the base, three times as strong, so a small dot shows it.
-    private static int glow(int glow, int base) {
-        float a = Math.min(1f, 3 * (glow >>> 24) / 255f);
-        int r = Math.round(Color.red(base) + (Color.red(glow) - Color.red(base)) * a);
-        int g = Math.round(Color.green(base) + (Color.green(glow) - Color.green(base)) * a);
-        int b = Math.round(Color.blue(base) + (Color.blue(glow) - Color.blue(base)) * a);
-        return Color.rgb(r, g, b);
-    }
-
-    private static GradientDrawable radial(int color, float cx, float cy, float r) {
-        GradientDrawable g = new GradientDrawable();
-        g.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        g.setColors(new int[] {color, color & 0x00FFFFFF});
-        g.setGradientCenter(cx, cy);
-        g.setGradientRadius(r);
-        return g;
     }
 
     private void buildTiles() {
@@ -426,22 +370,25 @@ public class MainActivity extends Activity {
             addTile(root, pkg, label, banner, null, icon, gridX(i), gridY(i), w, h);
         }
 
-        // Bottom row: Play Store, HDMI inputs, Settings and Add app, six at most.
+        // Bottom row: Play Store, HDMI inputs, Settings and Add app, six at most. With the
+        // "settings" shortcut, Settings is a gear by the clock instead, which frees a spot here.
+        List<Integer> quick = quickList();
+        boolean gearUp = quick.contains(Arrays.asList(QUICK_NAMES).indexOf(SETTINGS));
         int col = 0;
         boolean store = !apps.contains(PLAY_STORE) && launchIntent(pm, PLAY_STORE) != null;
         List<TvInputInfo> inputs = hdmiInputs();
-        int room = PER_ROW - 2 - (store ? 1 : 0);
+        int room = PER_ROW - (gearUp ? 1 : 2) - (store ? 1 : 0);
         if (inputs.size() > room) inputs = inputs.subList(0, room);
         if (store)
             addTile(root, PLAY_STORE, "Play Store", null, LineIcon.PLAY, null, m + col++ * (w + g), bottomTop, w, h);
         for (TvInputInfo in : inputs)
             addTile(root, in.getId(), inputLabel(in), null, LineIcon.HDMI, null, m + col++ * (w + g), bottomTop, w, h);
-        addTile(root, SETTINGS, Strings.t("Settings"), null, LineIcon.SETTINGS, null, m + col++ * (w + g), bottomTop, w, h);
+        if (!gearUp)
+            addTile(root, SETTINGS, Strings.t("Settings"), null, LineIcon.SETTINGS, null, m + col++ * (w + g), bottomTop, w, h);
         addTile(root, ADD, Strings.t("Add app"), null, LineIcon.PLUS, null, m + col * (w + g), bottomTop, w, h);
 
         // Plain icons at the top right, level with the date: any settings shortcuts picked, then the
         // network icon. Added last, so the first app keeps first focus; Up from the apps reaches them.
-        List<Integer> quick = quickList();
         int ib = px(ICON_BUTTON), ig = px(ICON_GAP);
         // The last icon's right edge lines up with the apps' (its focus circle sticks out past them).
         int qx = getResources().getDisplayMetrics().widthPixels - m + (ib - px(ICON_SIZE)) / 2
@@ -594,8 +541,9 @@ public class MainActivity extends Activity {
         if (ADD.equals(key)) {
             showAddMenu(-1);
             return;
-        } else if (SETTINGS.equals(key)) {
-            dropdown(tile(SETTINGS), SETTINGS_ITEMS, which -> {
+        } else if (SETTINGS.equals(key) || (QUICK + SETTINGS).equals(key)) {
+            // The Settings menu, under its tile or under the gear by the clock.
+            dropdown(tile(key), SETTINGS_ITEMS, which -> {
                 if (which == 0) showWallpapers();
                 else if (which == 1) openBrightness();
                 else openTvSettings();
@@ -733,6 +681,7 @@ public class MainActivity extends Activity {
                 break;
             case "sound": all.add(new Intent(Settings.ACTION_SOUND_SETTINGS)); break;
             case "picture": all.add(new Intent(Settings.ACTION_DISPLAY_SETTINGS)); break;
+            case SETTINGS: all.add(new Intent(Settings.ACTION_SETTINGS)); break; // the gear opens the menu; this just says every TV has it
         }
         PackageManager pm = getPackageManager();
         List<Intent> out = new ArrayList<>();
@@ -906,12 +855,14 @@ public class MainActivity extends Activity {
         int h = items.length * rowH + 2 * pad;
         int y = tileBottom + px(64);
         if (y + h > getResources().getDisplayMetrics().heightPixels - px(24)) y = at[1] - h - px(16);
+        // Under an icon by the clock, there's no room to the right: keep the menu on screen.
+        int x = Math.min(at[0], getResources().getDisplayMetrics().widthPixels - w - px(24));
         Window win = d.getWindow();
         win.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         win.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         win.setGravity(Gravity.TOP | Gravity.START);
         android.view.WindowManager.LayoutParams lp = win.getAttributes();
-        lp.x = at[0];
+        lp.x = x;
         lp.y = y;
         lp.width = w;
         lp.height = h;
@@ -1070,17 +1021,9 @@ public class MainActivity extends Activity {
     // The name set in Settings > Inputs (like "Bedroom"), else the TV's own name (like "HDMI 1").
     private String inputLabel(TvInputInfo in) {
         CharSequence custom = in.loadCustomLabel(this);
-        if (custom != null && custom.length() > 0) return withoutDeviceType(custom.toString());
+        if (custom != null && custom.length() > 0) return Labels.withoutDeviceType(android.os.Build.MANUFACTURER, custom.toString());
         CharSequence label = in.loadLabel(this);
-        return label != null && label.length() > 0 ? withoutDeviceType(label.toString()) : "HDMI";
-    }
-
-    // Philips stores a name as "name&DEVICE_TYPE" (like "Computer&COMPUTER"), so show the name only.
-    // Only on Philips TVs: elsewhere a name like "AUDIO&VIDEO" is the name itself.
-    private static String withoutDeviceType(String label) {
-        if (!"Philips".equalsIgnoreCase(android.os.Build.MANUFACTURER)) return label;
-        int amp = label.lastIndexOf('&');
-        return amp > 0 && label.substring(amp + 1).matches("[A-Z][A-Z0-9_]{2,}") ? label.substring(0, amp).trim() : label;
+        return label != null && label.length() > 0 ? Labels.withoutDeviceType(android.os.Build.MANUFACTURER, label.toString()) : "HDMI";
     }
 
     private boolean userInstalled(String pkg) {

@@ -4,17 +4,35 @@ TV Detox does two jobs. The home screen is automatic. Turning off the junk is a 
 call for every app, so it is left to whoever is driving the setup. This page is that
 judgement, plus the rules that keep it reversible.
 
-Start with `sh candidates.sh <TV_IP>`. It lists every app on the TV with a verdict, and
-changes nothing:
+Start with `sh candidates.sh <TV_IP>`. It first says how the TV is doing (memory, swap, how
+busy it is, how many apps are off), then lists every app on the TV with a verdict, and changes
+nothing:
 
 | verdict | meaning |
 | --- | --- |
 | `never` | the TV needs it, or Android keeps it running whatever you do. Leave it on. |
 | `keep` | it carries a feature you may use, casting or search or Live TV. Off only if unused. |
 | `safe` | commonly preinstalled junk: ads, sponsored rows, unused vendor and Google apps. |
+| `app` | an app on the TV's app list, or one you installed. Yours to keep, or to turn off if unused. |
 | `review` | nothing known about it. Leave it on unless you know what it is. |
 
-Work down the list from the top. Turn off, wait, check the TV still works.
+The verdict comes from [packages.txt](../packages.txt), the one list of what each app is, or from
+what the TV itself says: apps Android keeps running, apps that provide an HDMI or tuner input, the
+keyboard in use and the TV's home screen are `never`; an app that handles a button on the remote
+says which; apps you installed and apps on the TV's app list are `app`.
+
+Work down the list from the top. Put what you want off in a file, one line each:
+
+```
+off com.google.android.tvrecommendations
+off com.google.android.backdrop
+global window_animation_scale 0
+```
+
+and make the changes with `sh apply.sh <TV_IP> my-tv.txt`. It shows what it would do, asks once,
+refuses what the TV needs, and writes every change to an undo list on the TV before making it.
+`sh check.sh <TV_IP>` later checks it all stuck, and `sh undo.sh <TV_IP> --cleanup` puts it back.
+Turn off, wait, check the TV still works.
 
 ## The four rules
 
@@ -76,8 +94,9 @@ boot.
 ## If something goes wrong
 
 - Bring one app back: `adb shell pm enable <package>`
-- Bring back the launchers `install.sh` turned off: `sh undo.sh <TV_IP>`. It only knows about
-  what `install.sh` turned off. Apps you turn off by hand from this guide aren't on its list,
+- Bring back everything `apply.sh` changed, and keep the home screen: `sh undo.sh <TV_IP> --cleanup`.
+- Bring back that and the launchers `install.sh` turned off, and remove the home screen:
+  `sh undo.sh <TV_IP>`. Apps you turned off by hand with `pm disable-user` are on neither list,
   so write each one down as you go, and turn them back on with `pm enable`.
 - Screen is black but the TV answers ADB: re-enable `com.google.android.tvlauncher`, boot to
   it, and run `undo.sh`.
@@ -90,54 +109,11 @@ package to disable. Set it on the remote instead.
 
 ## Reference
 
-### Never turn off
-
-| package | what it is |
-| --- | --- |
-| `com.google.android.gms`, `com.google.android.gsf` | Google Play services and framework |
-| `com.android.vending` | Google Play Store |
-| `com.android.tv.settings`, `com.android.settings` | Settings |
-| `com.android.systemui` | System UI |
-| `com.android.providers.*` | settings, media, contacts, downloads storage |
-| `com.android.bluetooth` | Bluetooth and the remote |
-| `com.android.packageinstaller`, `com.google.android.packageinstaller` | installing apps |
-| `com.dolby.android.audio.service` | audio processing, no sound without it on some TVs |
-| keyboards | `com.google.android.inputmethod.latin` (Gboard), `com.android.inputmethod.latin`, `com.tcl.inputmethod.international` |
-| setup apps | `com.google.android.tungsten.setupwraith`, `com.google.android.partnersetup`, `com.google.android.onetimeinitializer` |
-| TCL basics | `com.tcl.tvinput` (HDMI and tuner), `com.tcl.suspension` (input picker), `com.tcl.providers.config`, `com.tcl.useragreement` |
-| `com.google.android.apps.mediashell` | casting, if you cast |
-| anything flagged `PERSISTENT` | it will not stay off |
-
-### Commonly safe to turn off
-
-Ads and sponsored rows, unused Google apps, vendor filler and serial port relics:
-
-| package | what it is |
-| --- | --- |
-| `com.google.android.tvrecommendations` | Google TV sponsored row |
-| `com.google.android.backdrop` | Google TV backdrop ads |
-| `com.google.android.videos`, `com.google.android.youtube.tvmusic`, `com.google.android.play.games` | Google apps few TVs use |
-| `com.google.android.feedback` | Google feedback |
-| `com.tcl.waterfall.overseas`, `com.tcl.esticker` | TCL content feed and stickers |
-| `com.tcl.dashboard`, `com.tcl.messagebox` | TCL panels and popups |
-| `com.tcl.copydatatotv`, `com.tcl.audioplayer`, `com.tcl.imageplayer`, `com.tcl.videoplayer` | TCL media helpers |
-| `com.tcl.usercenter`, `com.tcl.keyhelp` | TCL account and help |
-| `com.android.printspooler`, `com.android.htmlviewer` | Android spare parts |
-
-### Depends on you
-
-Turn these off only if you do not use the feature:
-
-| package | feature |
-| --- | --- |
-| `com.google.android.apps.mediashell` | casting from your phone |
-| `com.google.android.katniss` | Google TV search and voice |
-| `com.google.android.tv.assistant` | Google Assistant |
-| `com.google.android.marvin.talkback` | TalkBack screen reader |
-| `com.google.android.tv.remote.service` | remote control from your phone |
-| `com.google.android.tts` | text to speech |
-| `com.tcl.tv` | Live TV, antenna and cable channels |
-| `com.android.dreams.basic`, `com.google.android.apps.tv.dreamx` | the screensaver. Keep it on an OLED TV, it prevents burn-in |
+The lists live in one place, [packages.txt](../packages.txt): a verdict, a package, and what it
+is, one app per line. `candidates.sh` reads it for the verdicts, `install.sh` for the home screens
+it may turn off, and `apply.sh` for what it refuses. Android and Google come first, then one
+block per TV maker (TCL, Realtek-based sets like Edenwood and Konka). To add your TV, run
+`candidates.sh`, find out what each `review` app does, and add a line per app.
 
 Vendors rename and add to these lists, so treat them as strong hints, not gospel. When in
 doubt, leave it on: a slow TV is better than a TV you cannot use.

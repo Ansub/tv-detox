@@ -1,8 +1,11 @@
 #!/bin/sh
-# Removes the home screen and turns your TV's own home screen back on.
-# Usage: sh undo.sh <TV_IP>
+# Puts the TV back: undoes the cleanup apply.sh made, turns your TV's own home screen back on and
+# removes this one.
+#   sh undo.sh <TV_IP>             everything
+#   sh undo.sh <TV_IP> --cleanup   only what apply.sh changed; the home screen stays
 set -e
-[ -n "$1" ] || { echo "Usage: sh undo.sh <TV_IP>" >&2; exit 1; }
+[ -n "$1" ] || { echo "Usage: sh undo.sh <TV_IP> [--cleanup]" >&2; exit 1; }
+CLEANUP_ONLY=; [ "$2" = "--cleanup" ] && CLEANUP_ONLY=1
 case "$1" in
   *.*.*.*:*) TV=$1 ;;
   *.*.*.*)   TV=$1:5555 ;;
@@ -34,6 +37,59 @@ turn_on() {
     *) echo "Couldn't check that $1 is back on." >&2; failed=1 ;;
   esac
 }
+
+sh_tv() { _rc=0; _out=$(adb -s "$TV" shell "$@" </dev/null 2>/dev/null) || _rc=$?; [ -z "$_out" ] || printf '%s\n' "$_out" | tr -d '\r'; return $_rc; }
+# Reads a setting the way the TV stores it: "null" when it was never set.
+get_setting() { case "$1" in device_config) sh_tv device_config get "$2" "$3" ;; *) sh_tv settings get "$1" "$2" ;; esac; }
+# Puts a setting back to its old value; "null" means it wasn't set at all.
+restore_setting() { # kind name [namespace-name] old
+  if [ "$1" = device_config ]; then
+    if [ "$4" = null ]; then sh_tv device_config delete "$2" "$3" >/dev/null 2>&1 || true
+    else sh_tv device_config put "$2" "$3" "$4" >/dev/null 2>&1 || true; fi
+    if [ "$(get_setting device_config "$2" "$3")" = "$4" ]; then echo "Put $2/$3 back to $4"
+    else echo "Couldn't put $2/$3 back to $4." >&2; failed=1; fi
+  else
+    if [ "$3" = null ]; then sh_tv settings delete "$1" "$2" >/dev/null 2>&1 || true
+    else sh_tv settings put "$1" "$2" "$3" >/dev/null 2>&1 || true; fi
+    if [ "$(get_setting "$1" "$2")" = "$3" ]; then echo "Put $1 $2 back to $3"
+    else echo "Couldn't put $1 $2 back to $3." >&2; failed=1; fi
+  fi
+}
+
+# First, the cleanup: every line apply.sh wrote to its undo list on the TV, newest first.
+# END marks a full read; no list at all is fine.
+JOURNAL=/data/local/tmp/tvhome-cleanup.txt
+journal=$(adb -s "$TV" shell "if [ -e $JOURNAL ]; then cat $JOURNAL && echo END; else echo END; fi" 2>/dev/null) || journal=
+journal=$(printf '%s\n' "$journal" | tr -d '\r')
+cleanup_failed=
+case "$journal" in
+  *END)
+    printf '%s\n' "$journal" | grep -vx END | grep -v '^$' | sed -n '1!G;h;$p' | while read -r kind a b c d; do
+      failed=
+      case "$kind" in
+        off) turn_on "$a" ;;
+        global|secure|system) restore_setting "$kind" "$a" "$c" ;;
+        device_config) restore_setting device_config "$a" "$b" "$d" ;;
+        *) echo "Can't read this line of the undo list, left as it is: $kind $a $b $c $d" >&2; failed=1 ;;
+      esac
+      [ -z "$failed" ] || echo FAIL
+    done > "${TMPDIR:-/tmp}/tvundo.$$" || true
+    grep -vx FAIL "${TMPDIR:-/tmp}/tvundo.$$" || true
+    grep -qx FAIL "${TMPDIR:-/tmp}/tvundo.$$" && cleanup_failed=1
+    rm -f "${TMPDIR:-/tmp}/tvundo.$$"
+    if [ -z "$cleanup_failed" ]; then
+      adb -s "$TV" shell "rm -f $JOURNAL"
+      [ "$journal" = END ] || echo "The cleanup is undone."
+    else
+      echo "Some of the cleanup couldn't be undone. The undo list is kept, so run undo.sh again." >&2; failed=1
+    fi ;;
+  *) echo "Couldn't read the list of changes apply.sh made." >&2; failed=1 ;;
+esac
+if [ -n "$CLEANUP_ONLY" ]; then
+  [ -z "$failed" ] || exit 1
+  echo "The home screen stays. sh undo.sh <TV_IP> without --cleanup removes it too."
+  exit 0
+fi
 
 # Turn back on whatever install.sh turned off, before removing this home screen.
 # END marks a full read; no list at all is fine.

@@ -112,6 +112,10 @@ final class Strings {
 
     private Strings() {}
 
+    // For the tests: the English labels, and every language's table.
+    static String[] english() { return EN; }
+    static Map<String, String[]> tables() { return LANGS; }
+
     static String lang() { return Locale.getDefault().getLanguage(); }
 
     // The label in the TV's language, else the English one. Read on every call, so it follows the TV.

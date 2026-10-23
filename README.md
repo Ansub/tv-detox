@@ -64,16 +64,21 @@ My TV is a <brand and model>.
    this turns off system apps, and that has some risk.
    A few TVs got stuck at the logo or kept restarting,
    and you're an AI, so you can make mistakes. undo.sh
-   and your undo list turn everything back on. Ask me to
-   confirm I want to go ahead.
+   and the undo list on the TV turn everything back on.
+   Ask me to confirm I want to go ahead.
 2. Connect to my TV over Wi-Fi. Walk me through anything
    I need to tap on the TV.
-3. Before changing anything, list every app in plain English:
-   safe to turn off, needed by the TV, and apps I use.
-   Check free memory.
-4. Ask me before every change. Turn apps off instead of
-   deleting them. Keep a list of what you changed and how
-   to undo it.
+3. Download https://github.com/Ansub/tv-detox and run
+   sh candidates.sh <TV_IP>. It changes nothing. Show me
+   how the TV is doing (its first lines), then explain the
+   list in plain English: what each "safe", "app" and
+   "review" app is, and ask me which apps I use.
+4. Ask me before every change. Put the changes we agree on
+   in a list, one per line (off <package>, or a setting),
+   and make them with sh apply.sh <TV_IP> <list>, never
+   with pm or settings directly. It turns apps off instead
+   of deleting them, refuses what the TV needs, and writes
+   an undo list on the TV that undo.sh and check.sh read.
 5. Never turn off: Google Play services
    (com.google.android.gms), Google Play, Settings,
    System UI, setup apps, the keyboard, Bluetooth, my HDMI
@@ -82,17 +87,17 @@ My TV is a <brand and model>.
    also never turn off Google TV's home screen
    (com.google.android.apps.tv.launcherx). If you're not
    sure, leave it on.
-6. Install the home screen: download
-   https://github.com/Ansub/tv-detox and run its
-   install.sh with my TV and these apps: <your apps>.
+6. Install the home screen: run install.sh with my TV and
+   these apps: <your apps>.
 7. Turn off animations and make the TV sleep after 5
-   minutes. Then check the model name and ask me if the TV
-   is OLED. Keep the screensaver on unless I say it's not
-   OLED.
+   minutes, through the apply.sh list too. Then check the
+   model name and ask me if the TV is OLED. Keep the
+   screensaver on unless I say it's not OLED.
 8. Wait 30 seconds after the last change, then restart the
-   TV once and check it starts up normally before you say
-   you're done. Show me free memory before
-   and after.
+   TV once, run sh check.sh <TV_IP> to check everything
+   stuck, and check it starts up normally before you say
+   you're done. Show me sh candidates.sh <TV_IP> --health
+   from before and after.
 9. Once everything is checked, remind me to turn off USB,
    Network and Wireless debugging (or Developer options)
    on the TV. Left on, other devices on my network can ask
@@ -108,7 +113,7 @@ In **Developer options**, turn off **USB debugging**, plus **Network debugging**
 ### Notes and warnings
 
 > [!WARNING]
-> **Do it at your own risk.** This turns off system apps. A few TVs got stuck at the logo or kept restarting, and the AI can make mistakes. It asks you before every change, and [`undo.sh`](#undo) plus its undo list turn everything back on. This is what worked for us, not professional advice. You're responsible for your own TV, and I'm not liable if something goes wrong.
+> **Do it at your own risk.** This turns off system apps. A few TVs got stuck at the logo or kept restarting, and the AI can make mistakes. It asks you before every change, and [`undo.sh`](#undo) plus the undo list on the TV turn everything back on. This is what worked for us, not professional advice. You're responsible for your own TV, and I'm not liable if something goes wrong.
 
 > [!WARNING]
 > **Google TV and Chromecast with Google TV:** don't turn off the TV's own home screen. On some of these devices that left them stuck restarting, and the only fix was a factory reset. Since v1.4.1, `install.sh` leaves it on for Google TV unless you opt in with `GOOGLE_TV=1`. The cleanup still works and makes the TV faster. You just keep Google TV's own home screen.
@@ -148,7 +153,7 @@ Menus differ a bit by brand. If you're stuck, ask Claude or Codex: *"I have a \<
 <summary><b>Which TVs does it work on?</b></summary>
 <br>
 
-Android TV 9 (a real TV), 11 and 12, and Google TV 14 (also a real TCL TV, see [TCL notes](#tcl-notes)). Every change is tested automatically on emulators.
+Android TV 9 (a real TV), 11 (also a real Edenwood TV, a Realtek-based budget set), 12, and Google TV 14 (also a real TCL TV, see [TCL notes](#tcl-notes)). Every change is tested automatically on emulators.
 
 </details>
 
@@ -334,7 +339,7 @@ That works the same. Your laptop talks to the TV over its IP address on your hom
 <summary><b>Can I just do the cleanup and keep my TV's home screen?</b></summary>
 <br>
 
-Yes. Leave out step 5 of the prompt ("Install the home screen"). Your TV looks the same, just with the junk turned off.
+Yes. Leave out step 6 of the prompt ("Install the home screen"). Your TV looks the same, just with the junk turned off.
 
 </details>
 
@@ -342,13 +347,37 @@ Yes. Leave out step 5 of the prompt ("Install the home screen"). Your TV looks t
 <summary><b>How do I know which apps are safe to turn off?</b></summary>
 <br>
 
-Run the planner. It reads the TV and prints every app with a verdict, changing nothing:
+Run the planner. It reads the TV, says how it's doing, and prints every app with a verdict, changing nothing:
 
 ```sh
-sh candidates.sh <TV_IP>
+sh candidates.sh <TV_IP>             # how the TV is doing, then every app with a verdict
+sh candidates.sh <TV_IP> --health    # just memory, swap, load and apps off: run it before and after
 ```
 
-`never` the TV needs it, `keep` it carries a feature you may use, `safe` common junk, `review` unknown. [docs/debloat.md](docs/debloat.md) explains the rules behind the verdicts, the traps — apps Android restarts whatever you do, the app that carries casting, and package names that hide what the app really is — and the never-touch and commonly-safe lists.
+`never` the TV needs it, `keep` it carries a feature you may use, `safe` common junk, `app` on the TV's app list or installed by you, `review` unknown. The verdicts come from [packages.txt](packages.txt), one list of what each app is, and from the TV itself: apps that provide an HDMI or tuner input, the keyboard in use and apps Android keeps running are `never` whatever their name, and an app that handles a button on the remote says which. [docs/debloat.md](docs/debloat.md) explains the rules behind the verdicts and the traps.
+
+</details>
+
+<details>
+<summary><b>How do I turn apps off myself, with undo?</b></summary>
+<br>
+
+Put the changes in a file, one per line, then let `apply.sh` make them:
+
+```sh
+sh apply.sh <TV_IP> my-tv.txt --dry-run   # shows what it would do
+sh apply.sh <TV_IP> my-tv.txt             # asks once, then does it
+sh undo.sh <TV_IP> --cleanup              # puts it all back, keeps the home screen
+```
+
+```text
+off com.google.android.tvrecommendations
+off com.google.android.backdrop
+global window_animation_scale 0
+system screen_off_timeout 300000
+```
+
+Apps are turned off, never deleted. It refuses what the TV needs: apps Android keeps running, apps that provide an HDMI or tuner input, the keyboard in use, the TV's home screen and everything marked `never` in `packages.txt`. Every change goes on an undo list on the TV before it's made, so `undo.sh` can put it back and `check.sh` can see it stuck. An app that was already off is left alone and kept off that list.
 
 </details>
 
@@ -383,12 +412,12 @@ Some remote buttons are handled by the TV's own home screen or by apps the clean
 <br>
 
 ```sh
-sh check.sh <TV_IP>                  # check the home screen is still in charge
+sh check.sh <TV_IP>                  # the home screen is still in charge, and the cleanup apply.sh made stuck
 sh check.sh <TV_IP> --fix            # and fix it
-sh check.sh <TV_IP> --fix my-tv.txt  # also check your own list of changes
+sh check.sh <TV_IP> --fix my-tv.txt  # also check a list of changes made by hand
 ```
 
-Your list has one change per line, like `off com.example.app`, `global window_animation_scale 0` or `device_config activity_manager max_cached_processes 4`. Ask Claude to write it from the changes it made.
+Changes made with `apply.sh` are checked from the undo list on the TV, nothing to pass. A list of your own has one change per line, like `off com.example.app`, `global window_animation_scale 0` or `device_config activity_manager max_cached_processes 4`.
 
 </details>
 
@@ -406,7 +435,7 @@ sh install.sh <TV_IP> "" "bluetooth,sound,picture"    # add settings shortcuts
 
 Most TVs keep opening their own home screen, so the script offers to turn that off. Nothing is uninstalled.
 
-The cleanup half is a judgement call per app, so it's not automated. `sh candidates.sh <TV_IP>` lists every app with a verdict and [docs/debloat.md](docs/debloat.md) gives the rules, if you'd rather decide yourself than have the AI do it.
+The cleanup half is a judgement call per app, so it's not automated. `sh candidates.sh <TV_IP>` lists every app with a verdict, [docs/debloat.md](docs/debloat.md) gives the rules, and `sh apply.sh <TV_IP> my-tv.txt` makes the changes you decide on, with undo (see "How do I turn apps off myself").
 
 </details>
 
@@ -438,11 +467,12 @@ Yes. Pick the **Settings** tile, then **Wallpaper**. (**TV settings**, right und
 <summary><b>Can I get Wi-Fi and Bluetooth one press away?</b></summary>
 <br>
 
-Yes. A small network icon always sits next to the clock. It shows **Wi-Fi** (with signal bars), **Ethernet** or a crossed-out Wi-Fi when you're offline, and opens your network settings. **Bluetooth**, **Sound** and **Picture** shortcuts can join it. They're off unless you ask for them:
+Yes. A small network icon always sits next to the clock. It shows **Wi-Fi** (with signal bars), **Ethernet** or a crossed-out Wi-Fi when you're offline, and opens your network settings. **Bluetooth**, **Sound** and **Picture** shortcuts can join it, and so can **Settings** as a gear, which then leaves the bottom row. They're off unless you ask for them:
 
 ```sh
 sh install.sh <TV_IP> "" "bluetooth,sound,picture"   # pick any of them, in any order
-sh install.sh <TV_IP> "" "none"                                    # take them away
+sh install.sh <TV_IP> "" "settings"                  # the Settings menu as a gear by the clock
+sh install.sh <TV_IP> "" "none"                      # take them away
 ```
 
 Press **Up** from your apps to reach them. A shortcut your TV has no screen for is left out. On TCL TVs, Sound and Picture open TCL's own panels.
@@ -458,7 +488,7 @@ Press **Up** from your apps to reach them. A shortcut your TV has no screen for 
 sh undo.sh <TV_IP>
 ```
 
-This turns your TV's own home screen back on and removes this one. To undo the cleanup too, ask Claude or Codex to reverse everything on its list.
+This undoes the cleanup `apply.sh` made, turns your TV's own home screen back on and removes this one. `sh undo.sh <TV_IP> --cleanup` undoes only the cleanup and keeps the home screen. Changes made by hand with `pm` or `settings` are on no list: ask Claude or Codex to reverse those from its notes.
 
 If you turned debugging off after setup, turn it back on first, then off again when you're done.
 
