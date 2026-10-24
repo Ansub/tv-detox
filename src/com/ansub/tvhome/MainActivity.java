@@ -732,7 +732,8 @@ public class MainActivity extends Activity {
                 all.add(new Intent("com.google.android.intent.action.CONNECT_INPUT")); // Android TV's pairing screen
                 break;
             case "sound": all.add(new Intent(Settings.ACTION_SOUND_SETTINGS)); break;
-            case "picture": all.add(new Intent(Settings.ACTION_DISPLAY_SETTINGS)); break;
+            // OnePlus's picture screen reads "from" from the extras and crashes when there are none.
+            case "picture": all.add(new Intent(Settings.ACTION_DISPLAY_SETTINGS).putExtra("from", "tvhome")); break;
         }
         PackageManager pm = getPackageManager();
         List<Intent> out = new ArrayList<>();
