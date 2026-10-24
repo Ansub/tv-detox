@@ -202,6 +202,23 @@ If the TV ever asks to be set up again, or a setup screen won't finish, turn the
 
 </details>
 
+<details>
+<summary><b>Philips Android TV: Home still opens the old screen</b></summary>
+<br>
+
+On Philips Android TVs such as the 43PUS8535, Home may go through `org.droidtv.homeintentresolver`. Keep the router and remote/system services on. `install.sh` opens Settings, confirms it left the new home screen, then presses Home to test the router before keeping stock launchers off. If verification fails, it restores what it disabled. Restart once to check the new home screen opens at boot; otherwise run `undo.sh` over USB or port 5555.
+
+Plain `check.sh` only reads state; `check.sh <TV_IP> --fix` may open Settings and press Home to test routing. If Home still opens the old screen, send the install output, firmware/Android version, and these results:
+
+```sh
+adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME
+adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME
+adb shell input keyevent KEYCODE_HOME
+adb shell dumpsys window | grep mCurrentFocus
+```
+
+</details>
+
 <a id="tcl-notes"></a>
 <details>
 <summary><b>TCL TVs: what worked, and what to keep</b></summary>

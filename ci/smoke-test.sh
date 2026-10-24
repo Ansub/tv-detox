@@ -22,7 +22,10 @@ echo "== install"
 YES=1 sh install.sh "$TV"
 sleep 3
 home=$(adb -s "$TV" shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -1 | tr -d '\r')
-[ "$home" = "com.ansub.tvhome/.MainActivity" ] || fail "default home is $home"
+case "$home" in
+  com.ansub.tvhome/.MainActivity|org.droidtv.homeintentresolver/*) ;;
+  *) fail "default home is $home" ;;
+esac
 adb -s "$TV" shell input keyevent KEYCODE_HOME
 wait_home || fail "home screen not in front"
 

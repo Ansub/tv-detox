@@ -105,6 +105,7 @@ package to disable. Set it on the remote instead.
 | keyboards | `com.google.android.inputmethod.latin` (Gboard), `com.android.inputmethod.latin`, `com.tcl.inputmethod.international` |
 | setup apps | `com.google.android.tungsten.setupwraith`, `com.google.android.partnersetup`, `com.google.android.onetimeinitializer` |
 | TCL basics | `com.tcl.tvinput` (HDMI and tuner), `com.tcl.suspension` (input picker), `com.tcl.providers.config`, `com.tcl.useragreement` |
+| Philips basics | `org.droidtv.` prefix: `homeintentresolver`, `GlobalKey`, `playtv`, `hdmiservice`, `channels`, `tvsystemui`, `tvpowermanagerservice`, `tv.tptvservice` ([TV Slim never-disable list](https://tvslim.app/packages/)); `lkb`, `xtv`, `settings`, `menudataapp`, `eum`, `aurora` ([tvdebloat DO NOT DISABLE block](https://tvdebloat.com/data/sources/philips-50pus8517.txt); removing `eum` or `aurora` leaves persistent `xtv` retrying) |
 | `com.google.android.apps.mediashell` | casting, if you cast |
 | anything flagged `PERSISTENT` | it will not stay off |
 
