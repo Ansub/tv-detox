@@ -4,6 +4,9 @@
 #   sh install.sh <TV_IP>                          your TV apps, picked for you
 #   sh install.sh <TV_IP> "com.netflix.ninja,com.google.android.youtube.tv"
 #   sh install.sh <TV_IP> "" "bluetooth,sound,picture"   adds settings shortcuts by the clock
+#   CLOCK=24 sh install.sh <TV_IP>               24-hour clock (12, 24, or auto for the TV's own)
+#   FAKE_INPUT=1 sh install.sh <emulator>        testing only: add a throwaway TV input, so an
+#                                                emulator with no HDMI ports still has one to draw
 #
 # On Google TV (Chromecast with Google TV and others) the TV's own home screen is left on.
 # GOOGLE_TV=1 turns it off anyway; only do that if you can reconnect over USB or port 5555.
@@ -51,11 +54,22 @@ if ! out=$(adb -s "$TV" install -r "$APK" 2>&1); then
   esac
 fi
 
-if [ -n "$APPS" ] || [ -n "$QUICK" ]; then
+# Testing only: a TV input service with nothing behind it, for an emulator, which has no HDMI
+# ports. undo.sh removes it again. On a real TV there is no reason to turn this on.
+if [ "$FAKE_INPUT" = 1 ]; then
+  FAKE=ci/fake-input/out/fakeinput.apk
+  [ -f "$FAKE" ] || sh ci/fake-input/build.sh
+  echo "Installing the test input (emulators only)…"
+  adb -s "$TV" install -r "$FAKE" >/dev/null
+fi
+
+if [ -n "$APPS" ] || [ -n "$QUICK" ] || [ -n "$CLOCK" ] || [ -n "$FAKE_INPUT" ]; then
   # The stamp makes the app apply this list once, even if Android later replays this start.
   set -- --es stamp "$(date +%s)"
   [ -n "$APPS" ] && set -- "$@" --es apps "\"$APPS\""
   [ -n "$QUICK" ] && set -- "$@" --es quick "\"$QUICK\""
+  [ -n "$CLOCK" ] && set -- "$@" --es clock "\"$CLOCK\""
+  [ "$FAKE_INPUT" = 1 ] && set -- "$@" --es fakeinputs 1
   adb -s "$TV" shell am start -n com.ansub.tvhome/.MainActivity "$@" >/dev/null
 fi
 
@@ -63,6 +77,44 @@ ME=com.ansub.tvhome/.MainActivity
 # Keeps adb's exit status, so a failed command on the TV counts as failed here.
 sh_tv() { _rc=0; _out=$(adb -s "$TV" shell "$@") || _rc=$?; [ -z "$_out" ] || printf '%s\n' "$_out" | tr -d '\r'; return $_rc; }
 current_home() { sh_tv cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -1; }
+
+# Read a foreground component; an empty result cannot verify Home routing.
+foreground() {
+  front=$(sh_tv dumpsys window 2>/dev/null | grep -m1 mCurrentFocus)
+  case "$front" in
+    */*) ;;
+    *) front=$(sh_tv dumpsys activity activities 2>/dev/null | grep -m1 -E 'mResumedActivity|topResumedActivity') ;;
+  esac
+  printf '%s\n' "$front" | grep -oE '[[:alnum:]_.]+/[[:alnum:]_.$]+' | head -1
+}
+# Philips routes Home through this app. Verify a transition from another screen.
+home_opens_me() {
+  case "$1" in
+    "$ME") return 0 ;;
+    org.droidtv.homeintentresolver/*) ;;
+    *) return 1 ;;
+  esac
+  sh_tv am start -W -a android.settings.SETTINGS >/dev/null 2>&1 || return 1
+  away=
+  for _try in 1 2 3 4 5; do
+    sleep 1
+    front=$(foreground)
+    case "$front" in
+      com.ansub.tvhome/*|"") ;;
+      */*) away=1; break ;;
+    esac
+  done
+  [ -n "$away" ] || return 1
+  sh_tv input keyevent KEYCODE_HOME >/dev/null 2>&1 || return 1
+  for _try in 1 2 3 4 5; do
+    sleep 1
+    front=$(foreground)
+    case "$front" in
+      "$ME"|com.ansub.tvhome/com.ansub.tvhome.MainActivity) return 0 ;;
+    esac
+  done
+  return 1
+}
 
 # Make it the default home: the role (Android 10+) and the classic way.
 if [ "$(sh_tv getprop ro.build.version.sdk)" -ge 29 ]; then
@@ -79,6 +131,7 @@ LAUNCHERS="com.google.android.tvlauncher com.google.android.apps.tv.launcherx co
 is_launcher() {
   case "$1" in
     com.ansub.tvhome|com.android.settings|com.android.tv.settings|com.android.systemui|com.android.provision) return 1 ;;
+    org.droidtv.homeintentresolver) return 1 ;;
     *setup*|*wraith*|*provision*|*systemui*|*tvcenter*|*.tv.framework*|*.tvinput*) return 1 ;;
   esac
   case " $(echo $LAUNCHERS) " in *" $1 "*) ;; *) return 1 ;; esac
@@ -196,9 +249,33 @@ winner=$(current_home)
   echo "Lost the connection to $TV before it could be checked that Home opens this home screen." >&2
   echo "Reconnect over USB or port 5555 and run install.sh again. If the TV is stuck, undo.sh turns everything back on." >&2
   exit 1; }
-if [ -n "$turned_off" ] && [ "$winner" != "$ME" ]; then
+home_ok=
+if home_opens_me "$winner"; then home_ok=1
+else
+  case "$winner" in
+    org.droidtv.homeintentresolver/*)
+      echo "Philips' Home router did not bring this home screen to the front (or it couldn't be checked)."
+      echo "Leaving org.droidtv.homeintentresolver and the TV's input/remote services on."
+      echo "See the Philips note in README.md for the Home diagnostics to send us." ;;
+  esac
+fi
+# A failed Philips probe must also recover launchers left off by an earlier install.
+# Keep other saved apps off, and leave recovery on other TVs unchanged.
+revert_apps=$turned_off
+if [ -z "$home_ok" ] && [ "${winner%%/*}" = org.droidtv.homeintentresolver ]; then
+  saved=$(sh_tv "if [ -e /data/local/tmp/tvhome-disabled.txt ]; then cat /data/local/tmp/tvhome-disabled.txt; fi" 2>/dev/null) || {
+    saved=
+    echo "Couldn't read the saved launcher list. Run undo.sh." >&2
+  }
+  for p in $LAUNCHERS; do
+    if printf '%s\n' "$saved" | grep -Fqx "$p"; then
+      case " $revert_apps " in *" $p "*) ;; *) revert_apps="$revert_apps $p" ;; esac
+    fi
+  done
+fi
+if [ -n "$revert_apps" ] && [ -z "$home_ok" ]; then
   revert_failed=
-  for p in $turned_off; do
+  for p in $revert_apps; do
     sh_tv pm enable "$p" >/dev/null 2>&1 || true
     # Only forget an app once the TV says it's on. If adb fails, keep it on undo.sh's list.
     if ! state=$(sh_tv pm list packages -d "$p" 2>/dev/null); then
@@ -221,10 +298,16 @@ if [ -n "$turned_off" ] && [ "$winner" != "$ME" ]; then
 fi
 
 adb -s "$TV" shell input keyevent KEYCODE_HOME
-if [ "$(current_home)" = "$ME" ]; then
+if [ -n "$home_ok" ]; then
   echo "Done. Press Home on your remote to see it."
+  case "$winner" in
+    org.droidtv.homeintentresolver/*)
+      echo "Restart the TV once to check it starts on the new home screen; if it doesn't, run undo.sh over USB or port 5555." ;;
+  esac
 elif [ -n "$reverted" ]; then
   echo "Installed, but your TV's own home screen still opens when you press Home."
+elif [ "${winner%%/*}" = org.droidtv.homeintentresolver ]; then
+  echo "Home didn't reach the new home screen through Philips' Home router; run undo.sh to turn the TV's own home screen back on."
 else
   echo "Installed, but your TV still opens its own home screen. If it asks which home screen to use, pick \"Home\" and choose Always."
 fi

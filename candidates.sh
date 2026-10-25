@@ -63,6 +63,13 @@ com.google.android.tungsten.setupwraith com.google.android.onetimeinitializer
 com.google.android.partnersetup com.android.provision com.android.tv.provision com.android.managedprovisioning
 com.tcl.suspension com.tcl.tvinput com.tcl.providers.config com.tcl.useragreement
 com.tcl.settings com.tcl.tcl_bt_rcu_service com.google.android.apps.tv.launcherx"
+# https://tvslim.app/packages/ never-disable list: Home routing, remote, TV, HDMI, channels, UI, power and core TV service.
+NEVER="$NEVER org.droidtv.homeintentresolver org.droidtv.GlobalKey org.droidtv.playtv
+org.droidtv.hdmiservice org.droidtv.channels org.droidtv.tvsystemui
+org.droidtv.tvpowermanagerservice org.droidtv.tv.tptvservice"
+# https://tvdebloat.com/data/sources/philips-50pus8517.txt DO NOT DISABLE: eum/aurora leave persistent org.droidtv.xtv in a retry loop.
+NEVER="$NEVER org.droidtv.lkb org.droidtv.xtv org.droidtv.settings
+org.droidtv.menudataapp org.droidtv.eum org.droidtv.aurora"
 
 # Turn off only if you don't use the feature they carry.
 KEEP="com.google.android.apps.mediashell com.google.android.katniss
@@ -162,6 +169,8 @@ com.google.android.apps.tv.launcherx	Google TV home screen
 com.google.android.leanbacklauncher	Android TV home screen
 com.google.android.tungsten.setupwraith	Google TV setup
 com.dolby.android.audio.service	Dolby audio
+org.droidtv.homeintentresolver	Philips Home key router
+org.droidtv.GlobalKey	Philips remote buttons
 com.ansub.tvhome	TV Detox home screen
 com.tcl.inputmethod.international	TV keyboard
 com.google.android.webview	Web pages inside apps

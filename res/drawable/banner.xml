@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The tile Google TV shows in its apps row: a white house outline, drawn like LineIcon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp" android:height="180dp"
+    android:viewportWidth="320" android:viewportHeight="180">
+    <path android:fillColor="#FF1C1C1E" android:pathData="M0,0h320v180h-320z" />
+    <path android:strokeColor="#FFFFFFFF" android:strokeWidth="8"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M110,88 L160,45 L210,88 M126,76 L126,140 L194,140 L194,76 M146,140 L146,108 L174,108 L174,140" />
+</vector>

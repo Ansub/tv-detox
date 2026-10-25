@@ -15,12 +15,17 @@ Claude Code or Codex does the work. You just press OK on the remote.
 
 **As seen on**
 
-[![The Verge](https://img.shields.io/badge/The_Verge-5200FF?style=for-the-badge)](https://www.theverge.com/ai-artificial-intelligence/1013505/maybe-claude-make-your-android-tv-less-crappy-too)
+[![The Verge](https://img.shields.io/badge/The_Verge-5200FF?style=for-the-badge)](https://www.theverge.com/tech/1016116/vibe-coding-tv-os)
 [![Android Authority](https://img.shields.io/badge/Android_Authority-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.androidauthority.com/android-tv-vibe-hacking-remove-ads-bloatware-3725338/)
 [![Mashable](https://img.shields.io/badge/Mashable-00AEEF?style=for-the-badge)](https://mashable.com/tech/smart-tv-ads-claude-code-ai-cleanup)
 [![t3n](https://img.shields.io/badge/t3n-E6007E?style=for-the-badge)](https://t3n.de/news/claude-alter-fernseher-android-tv-1768831/)
 [![Tom's Guide](https://img.shields.io/badge/Tom's_Guide-E1261C?style=for-the-badge)](https://www.tomsguide.com/ai/people-are-using-ai-to-turn-their-smart-tvs-into-dumb-tvs-and-you-might-want-to-do-the-same)
 [![Yahoo Tech](https://img.shields.io/badge/Yahoo_Tech-6001D2?style=for-the-badge)](https://tech.yahoo.com/ai/article/sick-of-seeing-ads-and-clutter-on-your-smart-tv-the-internet-says-ai-can-fix-that-181417392.html)
+[![GIGA](https://img.shields.io/badge/GIGA-E2001A?style=for-the-badge)](https://www.giga.de/tech/ist-euer-smart-tv-zu-langsam-dieses-ki-tool-kann-helfen--01M5HH1C89TWAQX4FYXJBDBQAF)
+[![Computer Hoy](https://img.shields.io/badge/Computer_Hoy-0A64A0?style=for-the-badge)](https://computerhoy.20minutos.es/dispositivos/tv-detox-app-gratis-elimina-obsolescencia-programada-tu-smart-tv-claude-hace-trabajo-tu-solo-tienes-que-pulsar-ok-mando-distancia_7050469_0.html)
+[![AI Times](https://img.shields.io/badge/AI_Times-111111?style=for-the-badge)](https://www.aitimes.com/news/articleView.html?idxno=216547)
+
+[All press coverage →](press.md)
 
 <img src="docs/home-screen.png" alt="The TV Detox home screen" width="100%">
 
@@ -177,6 +182,46 @@ The cleanup works, but **leave Google TV's own home screen on**, which means you
 
 - Connect with Wireless debugging (see "How do I turn on developer mode?" above). The plain `install.sh <TV_IP>` won't reach a Chromecast.
 - The YouTube button on the remote can stop working, and some lose casting. Tell Claude to keep casting on if you use it.
+- To make Home open this home screen anyway, turn on **Settings > Accessibility > Home button**. Google TV's home screen stays on: when it opens, this one opens over it. Hold Back on this home screen to go to Google TV's, which then stays until you open "Home" from its apps row or restart the TV.
+- On Android 13+, a sideloaded app may first need **App info > ⋮ > Allow restricted settings** before the toggle works. Play Protect may warn about the app because it has an accessibility service.
+- If this home screen repeatedly fails to open, redirects stop. Open its "Home" tile to try again. To recover at any time, turn off **Home button** in Accessibility, or uninstall this app.
+
+If the Accessibility screen freezes, this adb alternative adds our service while keeping TalkBack and any other enabled services (run from a Mac/Linux terminal):
+
+```sh
+adb shell '
+service=com.ansub.tvhome/.HomeButton
+services=$(settings get secure enabled_accessibility_services)
+case "$services" in null|"") services="" ;; esac
+case ":$services:" in
+  *":$service:"*|*":com.ansub.tvhome/com.ansub.tvhome.HomeButton:"*) ;;
+  *) services="${services:+$services:}$service" ;;
+esac
+settings put secure enabled_accessibility_services "$services"
+settings put secure accessibility_enabled 1
+'
+```
+
+To remove only our service with adb, leaving the others enabled:
+
+```sh
+adb shell '
+services=$(settings get secure enabled_accessibility_services)
+keep=""
+IFS=:
+for service in $services; do
+  case "$service" in
+    ""|null|com.ansub.tvhome/.HomeButton|com.ansub.tvhome/com.ansub.tvhome.HomeButton) ;;
+    *) keep="${keep:+$keep:}$service" ;;
+  esac
+done
+if [ -n "$keep" ]; then
+  settings put secure enabled_accessibility_services "$keep"
+else
+  settings delete secure enabled_accessibility_services
+fi
+'
+```
 
 </details>
 
@@ -194,6 +239,23 @@ adb shell pm enable com.google.android.apps.tv.launcherx
 ```
 
 If the TV ever asks to be set up again, or a setup screen won't finish, turn the setup app back on first.
+
+</details>
+
+<details>
+<summary><b>Philips Android TV: Home still opens the old screen</b></summary>
+<br>
+
+On Philips Android TVs such as the 43PUS8535, Home may go through `org.droidtv.homeintentresolver`. Keep the router and remote/system services on. `install.sh` opens Settings, confirms it left the new home screen, then presses Home to test the router before keeping stock launchers off. If verification fails, it restores what it disabled. Restart once to check the new home screen opens at boot; otherwise run `undo.sh` over USB or port 5555.
+
+Plain `check.sh` only reads state; `check.sh <TV_IP> --fix` may open Settings and press Home to test routing. If Home still opens the old screen, send the install output, firmware/Android version, and these results:
+
+```sh
+adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME
+adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME
+adb shell input keyevent KEYCODE_HOME
+adb shell dumpsys window | grep mCurrentFocus
+```
 
 </details>
 
@@ -267,6 +329,39 @@ adb shell ime set <the keyboard you noted>
 </details>
 
 <details>
+<summary><b>OnePlus TVs: what worked, and what to keep</b></summary>
+<br>
+
+Tested on a OnePlus TV E00 (QLED, Android TV 11 with Google TV's home screen, 2.9 GB of RAM). The cleanup was followed by a restart, and the TV started normally and opened this home screen by itself. Free memory went from about 1.34 GB to about 1.67 GB, though part of that is just from restarting.
+
+**Home screen.** OnePlus ships two home screens: OxygenPlay (`com.oneplus.tv.launcher`) and Google TV's (`com.google.android.apps.tv.launcherx`). Turning off Google TV's is up to you and at your own risk: it worked on this TV, but it has left some Google TVs (like Chromecast) stuck restarting. Only try it if you can reconnect over USB or port 5555. If you leave it on, the cleanup still works and Home keeps opening Google TV's home screen. If you do turn it off and Home opens Google TV's setup app, run `install.sh` again with `GOOGLE_TV=1 YES_SETUP=1`, the same fix as on the TCL above.
+
+**Safe to turn off**, if you don't use them:
+
+| App | Package |
+|---|---|
+| OxygenPlay home screen | `com.oneplus.tv.launcher` |
+| OnePlus message board and promos | `com.heytap.tv.msgboard` |
+| Store demo | `fusion.android.tv.demo` |
+| User guide | `com.oneplus.tv.userguide` |
+| Weather | `net.oneplus.weather` |
+| ColorOS Relax | `com.coloros.relax.tv` |
+| Screen mirroring (Miracast) | `com.heytap.optvmiracastservice` |
+| OnePlus phone link | `com.heytap.olink`, `com.heytap.ars.sink` |
+| Bluetooth speaker mode | `com.heytap.tv.btspeaker` |
+| Camera | `com.heytap.tv.camera` |
+| AirScreen | `com.ionitech.airscreen` |
+
+**Keep these on:**
+
+- `com.heytap.tv.livetv`: Live TV, which also opens the HDMI input list. Turning it off can stop you switching inputs.
+- `com.mediatek.*`, `com.oneplus.tv.factory`, `com.oneplus.tv.remote`: the remote's buttons, the input key, the tuner and HDMI.
+
+**Remote buttons.** If you turned Google TV's home screen off, the **Guide** and **All apps** keys do nothing, because they open it. That's expected.
+
+</details>
+
+<details>
 <summary><b>The Claude app says it can't reach my TV</b></summary>
 <br>
 
@@ -304,7 +399,15 @@ Yes. Leave out step 5 of the prompt ("Install the home screen"). Your TV looks t
 <summary><b>How do I know which apps are safe to turn off?</b></summary>
 <br>
 
-Run the planner. It reads the TV and prints every app with a verdict, changing nothing:
+First, optionally, check the TV itself:
+
+```sh
+sh supports.sh <TV_IP>
+```
+
+It prints what the TV is (make, model, Android version, RAM), which home screens can take over, how many apps are already turned off, and whether swapping the home screen is a good idea on that set. It changes nothing.
+
+Then run the planner. It reads the TV and prints every app with a verdict, changing nothing:
 
 ```sh
 sh candidates.sh <TV_IP>
@@ -386,6 +489,8 @@ Use the remote. Hold **OK** on an app (or press **Menu**) to:
 
 To add an app, pick the **Add app** tile in the bottom row. Add as many apps as you like: they wrap into rows of six, and the page scrolls once there are more than twelve. Your changes are kept until you run `install.sh` with a new app list.
 
+HDMI tiles work the same way. Hold **OK** on one to **Rename** it — TV, PlayStation, Xbox, Switch, Laptop, PC, Blu-ray, Soundbar — or choose **Type a name…** to enter your own with the TV’s keyboard. You can also **Remove** it from the home screen. A removed input comes back by holding **OK** on the **Add app** tile. This only changes this home screen; the TV's own input names stay as they are.
+
 </details>
 
 <details>
@@ -463,6 +568,8 @@ If the laptop never connects, use the TV's recovery mode or a factory reset. How
    ```
 3. `sh build.sh`, then `sh install.sh <TV_IP>` installs your build instead of the release.
 4. `sh ci/smoke-test.sh <TV_IP or emulator>` checks it all works.
+5. `CLOCK=24 sh install.sh <TV_IP>` sets a 24-hour clock (or `CLOCK=12` for a 12-hour one, `CLOCK=auto` to follow the TV again). On the TV, holding OK on an HDMI tile renames or removes that input.
+6. Testing the input tiles on an emulator, which has no HDMI ports: `FAKE_INPUT=1 sh install.sh <emulator>`. That builds and installs `ci/fake-input` (a TV input service with no hardware behind it) and tells the home screen to show it. `undo.sh` removes it again. It is for emulators only.
 
 HDMI inputs are found on their own. The labels follow the TV's language, with 16 languages built in. To add yours or fix a translation, edit `src/com/ansub/tvhome/Strings.java`. Keep `key.jks`, which is made on your first build: updates must be signed with the same key.
 
