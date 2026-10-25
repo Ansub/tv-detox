@@ -284,8 +284,6 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        HomeButton.googleTv = false; // back on this home screen: Home comes here again
-
         // Rebuild only when apps were installed, removed or updated.
         if (dirty) {
             dirty = false;
@@ -294,6 +292,7 @@ public class MainActivity extends Activity {
         refreshNetwork();
         View f = getCurrentFocus();
         if (f == null && !tiles.isEmpty()) tiles.get(0).requestFocus();
+        HomeButton.onHomeResumed(this); // back on this home screen: Home comes here again
     }
 
     // Back from a menu or a window on top (like the uninstall prompt): catch up on apps that changed.

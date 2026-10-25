@@ -24,7 +24,7 @@
         <package android:name="com.tcl.settings" />
         <!-- Google TV's HDMI input player, so HDMI tiles can see when the TV sends HDMI to it. -->
         <package android:name="com.google.android.tv.inputplayer" />
-        <!-- Google TV's own home screen, which HomeButton opens when Home is held. -->
+        <!-- Google TV's own home screen, which HomeButton opens when Back is held. -->
         <package android:name="com.google.android.apps.tv.launcherx" />
     </queries>
     <!-- Lets "Uninstall" in the app menu open Android's uninstall prompt. -->
