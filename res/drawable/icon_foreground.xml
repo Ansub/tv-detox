@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The house, kept inside the middle 66 of 108 that every icon shape shows. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <group android:translateX="18" android:translateY="18">
+        <path android:strokeColor="#FFFFFFFF" android:strokeWidth="4"
+            android:strokeLineCap="round" android:strokeLineJoin="round"
+            android:pathData="M11,35 L36,13.5 L61,35 M19,29 L19,61 L53,61 L53,29 M29,61 L29,45 L43,45 L43,61" />
+    </group>
+</vector>

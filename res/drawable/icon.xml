@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app icon (Google TV's apps row uses it, not the banner): the banner's house on a dark circle. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FF1C1C1E" android:pathData="M54,0a54,54 0,1 1,0 108a54,54 0,1 1,0 -108z" />
+    <group android:translateX="18" android:translateY="18">
+        <path android:strokeColor="#FFFFFFFF" android:strokeWidth="4"
+            android:strokeLineCap="round" android:strokeLineJoin="round"
+            android:pathData="M11,35 L36,13.5 L61,35 M19,29 L19,61 L53,61 L53,29 M29,61 L29,45 L43,45 L43,61" />
+    </group>
+</vector>

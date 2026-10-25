@@ -182,6 +182,46 @@ The cleanup works, but **leave Google TV's own home screen on**, which means you
 
 - Connect with Wireless debugging (see "How do I turn on developer mode?" above). The plain `install.sh <TV_IP>` won't reach a Chromecast.
 - The YouTube button on the remote can stop working, and some lose casting. Tell Claude to keep casting on if you use it.
+- To make Home open this home screen anyway, turn on **Settings > Accessibility > Home button**. Google TV's home screen stays on: when it opens, this one opens over it. Hold Back on this home screen to go to Google TV's, which then stays until you open "Home" from its apps row or restart the TV.
+- On Android 13+, a sideloaded app may first need **App info > ⋮ > Allow restricted settings** before the toggle works. Play Protect may warn about the app because it has an accessibility service.
+- If this home screen repeatedly fails to open, redirects stop. Open its "Home" tile to try again. To recover at any time, turn off **Home button** in Accessibility, or uninstall this app.
+
+If the Accessibility screen freezes, this adb alternative adds our service while keeping TalkBack and any other enabled services (run from a Mac/Linux terminal):
+
+```sh
+adb shell '
+service=com.ansub.tvhome/.HomeButton
+services=$(settings get secure enabled_accessibility_services)
+case "$services" in null|"") services="" ;; esac
+case ":$services:" in
+  *":$service:"*|*":com.ansub.tvhome/com.ansub.tvhome.HomeButton:"*) ;;
+  *) services="${services:+$services:}$service" ;;
+esac
+settings put secure enabled_accessibility_services "$services"
+settings put secure accessibility_enabled 1
+'
+```
+
+To remove only our service with adb, leaving the others enabled:
+
+```sh
+adb shell '
+services=$(settings get secure enabled_accessibility_services)
+keep=""
+IFS=:
+for service in $services; do
+  case "$service" in
+    ""|null|com.ansub.tvhome/.HomeButton|com.ansub.tvhome/com.ansub.tvhome.HomeButton) ;;
+    *) keep="${keep:+$keep:}$service" ;;
+  esac
+done
+if [ -n "$keep" ]; then
+  settings put secure enabled_accessibility_services "$keep"
+else
+  settings delete secure enabled_accessibility_services
+fi
+'
+```
 
 </details>
 
