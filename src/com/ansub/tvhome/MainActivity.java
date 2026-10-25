@@ -293,6 +293,19 @@ public class MainActivity extends Activity {
         View f = getCurrentFocus();
         if (f == null && !tiles.isEmpty()) tiles.get(0).requestFocus();
         HomeButton.onHomeResumed(this); // back on this home screen: Home comes here again
+        // Only counted as opened once it has stayed up a moment, so a crash right after opening still
+        // counts as a failed launch.
+        getWindow().getDecorView().postDelayed(homeOk, 1500);
+    }
+
+    private final Runnable homeOk = () -> HomeButton.onHomeOk(this);
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Left normally (an app or Settings opened), so it didn't crash.
+        getWindow().getDecorView().removeCallbacks(homeOk);
+        HomeButton.onHomeOk(this);
     }
 
     // Back from a menu or a window on top (like the uninstall prompt): catch up on apps that changed.

@@ -62,9 +62,14 @@ public class HomeButton extends AccessibilityService {
         return c.getSharedPreferences("home_button", 0);
     }
 
-    // Opening our tile also resets a stopped redirect loop.
+    // Back on this home screen: Home comes here again.
     static void onHomeResumed(Context c) {
-        prefs(c).edit().clear().commit();
+        prefs(c).edit().remove("google_tv_boot").remove("google_tv_boot_count").commit();
+    }
+
+    // This home screen opened and didn't crash. Also resets a stopped redirect loop.
+    static void onHomeOk(Context c) {
+        prefs(c).edit().remove("pending").remove("failures").commit();
         lastOpened = -500;
     }
 
