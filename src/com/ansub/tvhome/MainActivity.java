@@ -134,6 +134,7 @@ public class MainActivity extends Activity {
     private String movingKey;   // the app being moved with left/right, if any
     private TextView moveHint;  // shown above the apps while moving
     private boolean longPressed; // OK was held: swallow the key-up so the app doesn't open
+    private boolean backHeld; // Back was held and opened Google TV's home screen: swallow the key-up
     // The tile OK went down on. An app that closes on OK's key-down (Netflix's "Exit") hands the matching
     // key-up to the tile still focused here, so a key-up only opens the app it went down on (#30).
     private String okDownKey;
@@ -291,6 +292,20 @@ public class MainActivity extends Activity {
         refreshNetwork();
         View f = getCurrentFocus();
         if (f == null && !tiles.isEmpty()) tiles.get(0).requestFocus();
+        HomeButton.onHomeResumed(this); // back on this home screen: Home comes here again
+        // Only counted as opened once it has stayed up a moment, so a crash right after opening still
+        // counts as a failed launch.
+        getWindow().getDecorView().postDelayed(homeOk, 1500);
+    }
+
+    private final Runnable homeOk = () -> HomeButton.onHomeOk(this);
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Left normally (an app or Settings opened), so it didn't crash.
+        getWindow().getDecorView().removeCallbacks(homeOk);
+        HomeButton.onHomeOk(this);
     }
 
     // Back from a menu or a window on top (like the uninstall prompt): catch up on apps that changed.
@@ -318,6 +333,30 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() { /* home screen: nothing to go back to */ }
+
+    // Holding Back opens Google TV's own home screen, where it stays on (see HomeButton). Spotted on a
+    // key repeat, or when Back is let go if the remote sends none.
+    @Override
+    public boolean onKeyLongPress(int code, KeyEvent ev) {
+        if (code == KeyEvent.KEYCODE_BACK && HomeButton.openGoogleTv(this)) {
+            backHeld = true;
+            return true;
+        }
+        return super.onKeyLongPress(code, ev);
+    }
+
+    @Override
+    public boolean onKeyUp(int code, KeyEvent ev) {
+        if (code == KeyEvent.KEYCODE_BACK) {
+            boolean held = backHeld;
+            backHeld = false;
+            if (held) return true;
+            if (ev.isTracking() && !ev.isCanceled()
+                    && ev.getEventTime() - ev.getDownTime() >= ViewConfiguration.getLongPressTimeout()
+                    && HomeButton.openGoogleTv(this)) return true;
+        }
+        return super.onKeyUp(code, ev);
+    }
 
     // Static gradient, drawn once by the window: no extra view, no animation.
     private Drawable background(int[] c) {
