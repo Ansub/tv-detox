@@ -63,6 +63,13 @@ com.google.android.tungsten.setupwraith com.google.android.onetimeinitializer
 com.google.android.partnersetup com.android.provision com.android.tv.provision com.android.managedprovisioning
 com.tcl.suspension com.tcl.tvinput com.tcl.providers.config com.tcl.useragreement
 com.tcl.settings com.tcl.tcl_bt_rcu_service com.google.android.apps.tv.launcherx"
+# https://tvslim.app/packages/ never-disable list: Home routing, remote, TV, HDMI, channels, UI, power and core TV service.
+NEVER="$NEVER org.droidtv.homeintentresolver org.droidtv.GlobalKey org.droidtv.playtv
+org.droidtv.hdmiservice org.droidtv.channels org.droidtv.tvsystemui
+org.droidtv.tvpowermanagerservice org.droidtv.tv.tptvservice"
+# https://tvdebloat.com/data/sources/philips-50pus8517.txt DO NOT DISABLE: eum/aurora leave persistent org.droidtv.xtv in a retry loop.
+NEVER="$NEVER org.droidtv.lkb org.droidtv.xtv org.droidtv.settings
+org.droidtv.menudataapp org.droidtv.eum org.droidtv.aurora"
 
 # Turn off only if you don't use the feature they carry.
 KEEP="com.google.android.apps.mediashell com.google.android.katniss
@@ -70,13 +77,14 @@ com.google.android.tv.assistant com.google.android.marvin.talkback
 com.google.android.tv.remote.service com.google.android.tts
 com.google.android.syncadapters.contacts com.google.android.syncadapters.calendar
 com.ansub.tvhome com.google.android.webview com.tcl.android.webview
-com.tcl.tv com.tcl.micmanager"
+com.tcl.tv com.tcl.micmanager
+com.android.dreams.basic com.google.android.apps.tv.dreamx"
 
 # Commonly preinstalled junk: ads, sponsored rows, unused vendor and Google apps.
 SAFE="com.google.android.tvrecommendations com.google.android.backdrop
 com.google.android.videos com.google.android.youtube.tvmusic com.google.android.play.games
 com.google.android.feedback
-com.android.printspooler com.android.dreams.basic com.android.htmlviewer com.android.soundpicker
+com.android.printspooler com.android.htmlviewer com.android.soundpicker
 com.tcl.waterfall.overseas com.tcl.esticker com.tcl.partnercustomizer
 com.tcl.messagebox com.tcl.smartalexa com.tcl.copydatatotv com.tcl.audioplayer
 com.tcl.imageplayer com.tcl.keyhelp com.tcl.usercenter
@@ -132,6 +140,7 @@ com.google.android.syncadapters.contacts	Contacts sync
 com.google.android.syncadapters.calendar	Calendar sync
 com.android.printspooler	Printing
 com.android.dreams.basic	Basic screensaver
+com.google.android.apps.tv.dreamx	Google TV screensaver
 com.android.htmlviewer	HTML file viewer
 com.netflix.ninja	Netflix
 com.amazon.amazonvideo.livingroom	Prime Video
@@ -160,6 +169,8 @@ com.google.android.apps.tv.launcherx	Google TV home screen
 com.google.android.leanbacklauncher	Android TV home screen
 com.google.android.tungsten.setupwraith	Google TV setup
 com.dolby.android.audio.service	Dolby audio
+org.droidtv.homeintentresolver	Philips Home key router
+org.droidtv.GlobalKey	Philips remote buttons
 com.ansub.tvhome	TV Detox home screen
 com.tcl.inputmethod.international	TV keyboard
 com.google.android.webview	Web pages inside apps

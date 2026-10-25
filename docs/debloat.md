@@ -105,6 +105,7 @@ package to disable. Set it on the remote instead.
 | keyboards | `com.google.android.inputmethod.latin` (Gboard), `com.android.inputmethod.latin`, `com.tcl.inputmethod.international` |
 | setup apps | `com.google.android.tungsten.setupwraith`, `com.google.android.partnersetup`, `com.google.android.onetimeinitializer` |
 | TCL basics | `com.tcl.tvinput` (HDMI and tuner), `com.tcl.suspension` (input picker), `com.tcl.providers.config`, `com.tcl.useragreement` |
+| Philips basics | `org.droidtv.` prefix: `homeintentresolver`, `GlobalKey`, `playtv`, `hdmiservice`, `channels`, `tvsystemui`, `tvpowermanagerservice`, `tv.tptvservice` ([TV Slim never-disable list](https://tvslim.app/packages/)); `lkb`, `xtv`, `settings`, `menudataapp`, `eum`, `aurora` ([tvdebloat DO NOT DISABLE block](https://tvdebloat.com/data/sources/philips-50pus8517.txt); removing `eum` or `aurora` leaves persistent `xtv` retrying) |
 | `com.google.android.apps.mediashell` | casting, if you cast |
 | anything flagged `PERSISTENT` | it will not stay off |
 
@@ -122,7 +123,7 @@ Ads and sponsored rows, unused Google apps, vendor filler and serial port relics
 | `com.tcl.dashboard`, `com.tcl.messagebox` | TCL panels and popups |
 | `com.tcl.copydatatotv`, `com.tcl.audioplayer`, `com.tcl.imageplayer`, `com.tcl.videoplayer` | TCL media helpers |
 | `com.tcl.usercenter`, `com.tcl.keyhelp` | TCL account and help |
-| `com.android.printspooler`, `com.android.dreams.basic`, `com.android.htmlviewer` | Android spare parts |
+| `com.android.printspooler`, `com.android.htmlviewer` | Android spare parts |
 
 ### Depends on you
 
@@ -137,6 +138,7 @@ Turn these off only if you do not use the feature:
 | `com.google.android.tv.remote.service` | remote control from your phone |
 | `com.google.android.tts` | text to speech |
 | `com.tcl.tv` | Live TV, antenna and cable channels |
+| `com.android.dreams.basic`, `com.google.android.apps.tv.dreamx` | the screensaver. Keep it on an OLED TV, it prevents burn-in |
 
 Vendors rename and add to these lists, so treat them as strong hints, not gospel. When in
 doubt, leave it on: a slow TV is better than a TV you cannot use.

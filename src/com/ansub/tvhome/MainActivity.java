@@ -117,6 +117,34 @@ public class MainActivity extends Activity {
     private static final int ROW1_TOP = 604, ROW_STEP = 224;
     private static final int GRID_MIN_TOP = 400; // more rows push the grid up, but not into the clock
     private static final int ICON_TOP = 76, ICON_BUTTON = 72, ICON_SIZE = 40, ICON_GAP = 12; // level with the date
+
+    // The Settings tile opens a small menu: the home screen's own settings, then the TV's.
+    private static final String[] SETTINGS_ITEMS = {"Wallpaper", "Brightness", "TV settings"};
+    // Android TV 11 and later (Google TV too) has no Display page, but its "Display & Sound" page holds Picture.
+    private static final String[] TV_DISPLAY_SOUND = {"com.android.tv.settings",
+            "com.android.tv.settings.device.displaysound.DisplaySoundActivity"};
+    // Wallpapers, saved by name: a gradient top to bottom, then a glow from the top left and one from
+    // the bottom right. Dark ones first, then bright ones that get darker towards the bottom, so the
+    // white labels stay easy to read. Only colours, no images, so every one costs the same as Dusk,
+    // the default.
+    private static final String[] WALLPAPER_NAMES = {"Dusk", "Midnight", "Plum", "Forest", "Graphite", "Ocean", "Ember",
+            "Sunset", "Lagoon", "Aurora", "Coral", "Iris", "Meadow", "Gold"};
+    private static final int[][] WALLPAPERS = {
+        {0xFF15100F, 0xFF0A0809, 0xFF050405, 0x36FF8048, 0x2EAA3C8C},
+        {0xFF0E1220, 0xFF080A13, 0xFF040509, 0x384A6CFF, 0x2E5A3CC8},
+        {0xFF170E19, 0xFF0C070D, 0xFF050306, 0x38C050B4, 0x2E6440D2},
+        {0xFF0C150F, 0xFF070C09, 0xFF030604, 0x3050B478, 0x28289682},
+        {0xFF151617, 0xFF0B0C0D, 0xFF050506, 0x1CFFFFFF, 0x16A0B4C8},
+        {0xFF0A1517, 0xFF060C0E, 0xFF030607, 0x3426B4C8, 0x2E2A64C0},
+        {0xFF190D08, 0xFF0D0605, 0xFF060303, 0x40FF5A24, 0x32C8283C},
+        {0xFF8C3A5E, 0xFF5E2348, 0xFF22101E, 0xA0FF8A4C, 0x80E0457A},
+        {0xFF14588E, 0xFF15366E, 0xFF0A1632, 0x9030C8E0, 0x807A4CE0},
+        {0xFF0F4048, 0xFF0F2E3A, 0xFF08141C, 0x9038E0A0, 0x90A050F0},
+        {0xFFC0604E, 0xFF8A3456, 0xFF2E1230, 0x90FFB070, 0x70E04090},
+        {0xFF5A3CAE, 0xFF3A2A84, 0xFF16123A, 0x90C080FF, 0x804A7CFF},
+        {0xFF2E6E4C, 0xFF1C4A40, 0xFF0A201E, 0x90A8E070, 0x6030A8A8},
+        {0xFFB07624, 0xFF86401E, 0xFF2A1410, 0x90FFD060, 0x70FF5040},
+    };
     private float scale = 1f;
 
     private static Typeface regular, semibold;
@@ -164,7 +192,7 @@ public class MainActivity extends Activity {
         saveConfig(getIntent());
         loadFonts();
         scale = getResources().getDisplayMetrics().widthPixels / 1920f;
-        getWindow().setBackgroundDrawable(background());
+        showWallpaper(wallpaper());
 
         ScrollView scroller = new ScrollView(this);
         scroller.setFillViewport(true);
@@ -187,7 +215,9 @@ public class MainActivity extends Activity {
         time.setLetterSpacing(-0.028f);
         time.setFontFeatureSettings("tnum");
         time.setIncludeFontPadding(false);
-        clock.addView(date);
+        // Wrap, not the default match_parent: the column must be as wide as the date, not just the time,
+        // or "0:00" to "9:59" (one digit less) cuts a long date off.
+        clock.addView(date, new LinearLayout.LayoutParams(-2, -2));
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-2, -2);
         tp.topMargin = px(-20); // pull the big digits up under the date
         clock.addView(time, tp);
@@ -344,14 +374,51 @@ public class MainActivity extends Activity {
     @Override
     public void onBackPressed() { /* home screen: nothing to go back to */ }
 
-    // Static warm gradient, drawn once by the window: no extra view, no animation.
-    private Drawable background() {
+    // Static gradient, drawn once by the window: no extra view, no animation.
+    private Drawable background(int[] c) {
         GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[] {0xFF15100F, 0xFF0A0809, 0xFF050405});
-        GradientDrawable warm = radial(0x36FF8048, 0.08f, -0.12f, px(1250));
-        GradientDrawable plum = radial(0x2EAA3C8C, 1.0f, 1.1f, px(1000));
-        for (GradientDrawable g : new GradientDrawable[] {base, warm, plum}) g.setDither(true);
-        return new LayerDrawable(new Drawable[] {base, warm, plum});
+                new int[] {c[0], c[1], c[2]});
+        GradientDrawable top = radial(c[3], 0.08f, -0.12f, px(1250));
+        GradientDrawable bottom = radial(c[4], 1.0f, 1.1f, px(1000));
+        for (GradientDrawable g : new GradientDrawable[] {base, top, bottom}) g.setDither(true);
+        return new LayerDrawable(new Drawable[] {base, top, bottom});
+    }
+
+    // The saved wallpaper, as an index into WALLPAPERS (Dusk if none is saved).
+    private int wallpaper() {
+        String saved = getSharedPreferences(PREFS, 0).getString("wallpaper", null);
+        return Math.max(0, Arrays.asList(WALLPAPER_NAMES).indexOf(saved));
+    }
+
+    private void showWallpaper(int i) {
+        getWindow().setBackgroundDrawable(background(WALLPAPERS[i]));
+    }
+
+    // The wallpapers, each with a small dot of its colours. Moving through the list shows each one
+    // behind the panel; OK keeps it, Back goes back to the one before.
+    private void showWallpapers() {
+        final int size = px(40);
+        panel(Strings.t("Wallpaper"), Arrays.asList(WALLPAPER_NAMES), pos -> {
+            int[] c = WALLPAPERS[pos];
+            GradientDrawable dot = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                    new int[] {glow(c[3], c[0]), c[1], glow(c[4], c[0])});
+            dot.setShape(GradientDrawable.OVAL);
+            dot.setStroke(Math.max(1, px(2)), 0x26FFFFFF);
+            dot.setSize(size, size);
+            return dot;
+        }, size, wallpaper(), this::showWallpaper, which -> {
+            getSharedPreferences(PREFS, 0).edit().putString("wallpaper", WALLPAPER_NAMES[which]).apply();
+            showWallpaper(which);
+        });
+    }
+
+    // A glow colour made solid over the base, three times as strong, so a small dot shows it.
+    private static int glow(int glow, int base) {
+        float a = Math.min(1f, 3 * (glow >>> 24) / 255f);
+        int r = Math.round(Color.red(base) + (Color.red(glow) - Color.red(base)) * a);
+        int g = Math.round(Color.green(base) + (Color.green(glow) - Color.green(base)) * a);
+        int b = Math.round(Color.blue(base) + (Color.blue(glow) - Color.blue(base)) * a);
+        return Color.rgb(r, g, b);
     }
 
     private static GradientDrawable radial(int color, float cx, float cy, float r) {
@@ -643,7 +710,12 @@ public class MainActivity extends Activity {
             showAddMenu(-1);
             return;
         } else if (SETTINGS.equals(key)) {
-            i = new Intent(Settings.ACTION_SETTINGS);
+            dropdown(tile(SETTINGS), SETTINGS_ITEMS, which -> {
+                if (which == 0) showWallpapers();
+                else if (which == 1) openBrightness();
+                else openTvSettings();
+            });
+            return;
         } else if (isInput(key)) {
             openInput(key);
             return;
@@ -786,22 +858,51 @@ public class MainActivity extends Activity {
         return out;
     }
 
-    // Opens a shortcut's screen: the first one that starts wins.
-    private void openQuick(String name) {
+    // Opens a shortcut's screen: the first one that starts wins. False if none did.
+    private boolean openQuick(String name) {
         for (Intent i : quickIntents(name)) {
             try {
                 if (TCL_SHOW_WINDOW.equals(i.getAction())) startService(i);
                 else startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                return true;
+            } catch (Exception ignored) {}
+        }
+        return false;
+    }
+
+    // The TV's own picture screen, where brightness lives: the Picture shortcut's screens first (TCL's
+    // panel, then Android's Display page), then Android TV's Display & Sound page, else TV settings.
+    // Only system screens are started, so it needs no permission and changes nothing by itself.
+    private void openBrightness() {
+        if (openQuick("picture")) return;
+        Intent i = new Intent().setClassName(TV_DISPLAY_SOUND[0], TV_DISPLAY_SOUND[1]);
+        if (i.resolveActivity(getPackageManager()) != null) {
+            try {
+                startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
                 return;
             } catch (Exception ignored) {}
         }
+        openTvSettings();
+    }
+
+    private void openTvSettings() {
+        try { startActivity(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)); }
+        catch (Exception ignored) {}
     }
 
     interface Pick { void at(int which); }
+    interface Icon { Drawable at(int which) throws Exception; }
+
+    private void panel(String title, List<String> labels, Pick pick) {
+        panel(title, labels, null, 0, -1, null, pick);
+    }
 
     // A side panel in the home screen's own look: a title, then one row per choice, with the same
-    // glass focus as the tiles. Back closes it. iconPkgs (or null) puts each app's icon by its name.
-    private void panel(String title, final List<String> labels, final List<String> iconPkgs, final Pick pick) {
+    // glass focus as the tiles. Back closes it. icon (or null) puts an icon of that size by each name.
+    // With preview, the list starts on selected and moving through it calls preview; Back calls it
+    // with selected again, to put things back.
+    private void panel(String title, final List<String> labels, final Icon icon, final int size,
+                       final int selected, final Pick preview, final Pick pick) {
         final Dialog d = new Dialog(this, android.R.style.Theme_Material_Dialog_NoActionBar);
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -823,8 +924,6 @@ public class MainActivity extends Activity {
         focus.setColor(0x38FFFFFF);
         list.setSelector(focus);
         // Icons load as rows appear, drawn small to save RAM.
-        final PackageManager pm = getPackageManager();
-        final int size = px(48);
         final Drawable[] icons = new Drawable[labels.size()];
         list.setAdapter(new BaseAdapter() {
             @Override public int getCount() { return labels.size(); }
@@ -838,16 +937,12 @@ public class MainActivity extends Activity {
                 t.setGravity(Gravity.CENTER_VERTICAL);
                 t.setMinHeight(px(88));
                 t.setPadding(px(24), 0, px(24), 0);
-                Drawable icon = null;
-                if (iconPkgs != null) {
-                    if (icons[pos] == null) {
-                        try { icons[pos] = fit(pm.getApplicationIcon(iconPkgs.get(pos)), size, size); }
-                        catch (Exception e) { icons[pos] = new ColorDrawable(Color.TRANSPARENT); }
-                        icons[pos].setBounds(0, 0, size, size);
-                    }
-                    icon = icons[pos];
+                if (icon != null && icons[pos] == null) {
+                    try { icons[pos] = icon.at(pos); }
+                    catch (Exception e) { icons[pos] = new ColorDrawable(Color.TRANSPARENT); }
+                    icons[pos].setBounds(0, 0, size, size);
                 }
-                t.setCompoundDrawablesRelative(icon, null, null, null);
+                t.setCompoundDrawablesRelative(icons[pos], null, null, null);
                 t.setCompoundDrawablePadding(px(24));
                 return t;
             }
@@ -856,16 +951,26 @@ public class MainActivity extends Activity {
             d.dismiss();
             pick.at(pos);
         });
+        if (preview != null) {
+            list.setSelection(selected);
+            list.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+                @Override public void onItemSelected(android.widget.AdapterView<?> p, View v, int pos, long id) {
+                    preview.at(pos);
+                }
+                @Override public void onNothingSelected(android.widget.AdapterView<?> p) {}
+            });
+            d.setOnCancelListener(x -> preview.at(selected));
+        }
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, 0, 1f);
         lp.topMargin = px(36);
         box.addView(list, lp);
 
         d.setContentView(box);
         Window w = d.getWindow();
-        w.setBackgroundDrawable(new ColorDrawable(0xF7161113));
+        w.setBackgroundDrawable(new ColorDrawable(preview != null ? 0xFF161113 : 0xF7161113));
         w.setLayout(px(640), -1);
         w.setGravity(Gravity.END);
-        w.setDimAmount(0.5f);
+        w.setDimAmount(preview != null ? 0f : 0.5f); // a preview needs the home screen undimmed
         d.show();
     }
 
@@ -975,7 +1080,7 @@ public class MainActivity extends Activity {
         List<String> names = new ArrayList<>();
         names.add(own);
         for (String p : INPUT_PRESETS) if (!p.equals(own)) names.add(p);
-        panel(Strings.t("Rename"), names, null, which -> {
+        panel(Strings.t("Rename"), names, which -> {
             setInputName(id, which == 0 ? null : names.get(which));
             focusedKey = id;
             buildTiles();
@@ -1001,7 +1106,7 @@ public class MainActivity extends Activity {
             labels.add(inputLabel(in));
         }
         if (ids.isEmpty()) return;
-        panel(Strings.t("Show hidden inputs"), labels, null, which -> {
+        panel(Strings.t("Show hidden inputs"), labels, which -> {
             Set<String> now = hiddenInputs();
             now.remove(ids.get(which));
             saveHiddenInputs(now);
@@ -1063,13 +1168,14 @@ public class MainActivity extends Activity {
             }
         }
         if (byLabel.isEmpty()) {
-            panel(Strings.t("Every app is already here"), Collections.singletonList("OK"), null, which -> {});
+            panel(Strings.t("Every app is already here"), Collections.singletonList("OK"), which -> {});
             return;
         }
         final List<String> pkgs = new ArrayList<>(byLabel.values());
         String title = replaceIndex < 0 ? Strings.t("Add an app")
                 : String.format(Strings.t("Replace %s"), labelOf(rowApps.get(replaceIndex)));
-        panel(title, new ArrayList<>(byLabel.keySet()), pkgs, which -> {
+        panel(title, new ArrayList<>(byLabel.keySet()), pos -> fit(pm.getApplicationIcon(pkgs.get(pos)), px(48), px(48)),
+                px(48), -1, null, which -> {
             if (replaceIndex < 0) rowApps.add(pkgs.get(which));
             else rowApps.set(replaceIndex, pkgs.get(which));
             saveRow();

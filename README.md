@@ -2,6 +2,8 @@
 
 # TV Detox
 
+<a href="https://www.skool.com/staffed-claude-code-ai-5304"><img src="https://img.shields.io/badge/Join_the_community_%E2%86%92-FFD400?style=for-the-badge" alt="Join the community" width="340"></a>
+
 ### Make an old, slow Android TV fast again.
 
 Claude Code or Codex does the work. You just press OK on the remote.
@@ -10,6 +12,20 @@ Claude Code or Codex does the work. You just press OK on the remote.
 [![Tests](https://img.shields.io/github/actions/workflow/status/Ansub/tv-detox/build.yml?branch=main&label=tests)](https://github.com/Ansub/tv-detox/actions)
 [![License](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 [![YouTube](https://img.shields.io/badge/YouTube-@ansubkhan-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@ansubkhan)
+
+**As seen on**
+
+[![The Verge](https://img.shields.io/badge/The_Verge-5200FF?style=for-the-badge)](https://www.theverge.com/tech/1016116/vibe-coding-tv-os)
+[![Android Authority](https://img.shields.io/badge/Android_Authority-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://www.androidauthority.com/android-tv-vibe-hacking-remove-ads-bloatware-3725338/)
+[![Mashable](https://img.shields.io/badge/Mashable-00AEEF?style=for-the-badge)](https://mashable.com/tech/smart-tv-ads-claude-code-ai-cleanup)
+[![t3n](https://img.shields.io/badge/t3n-E6007E?style=for-the-badge)](https://t3n.de/news/claude-alter-fernseher-android-tv-1768831/)
+[![Tom's Guide](https://img.shields.io/badge/Tom's_Guide-E1261C?style=for-the-badge)](https://www.tomsguide.com/ai/people-are-using-ai-to-turn-their-smart-tvs-into-dumb-tvs-and-you-might-want-to-do-the-same)
+[![Yahoo Tech](https://img.shields.io/badge/Yahoo_Tech-6001D2?style=for-the-badge)](https://tech.yahoo.com/ai/article/sick-of-seeing-ads-and-clutter-on-your-smart-tv-the-internet-says-ai-can-fix-that-181417392.html)
+[![GIGA](https://img.shields.io/badge/GIGA-E2001A?style=for-the-badge)](https://www.giga.de/tech/ist-euer-smart-tv-zu-langsam-dieses-ki-tool-kann-helfen--01M5HH1C89TWAQX4FYXJBDBQAF)
+[![Computer Hoy](https://img.shields.io/badge/Computer_Hoy-0A64A0?style=for-the-badge)](https://computerhoy.20minutos.es/dispositivos/tv-detox-app-gratis-elimina-obsolescencia-programada-tu-smart-tv-claude-hace-trabajo-tu-solo-tienes-que-pulsar-ok-mando-distancia_7050469_0.html)
+[![AI Times](https://img.shields.io/badge/AI_Times-111111?style=for-the-badge)](https://www.aitimes.com/news/articleView.html?idxno=216547)
+
+[All press coverage →](press.md)
 
 <img src="docs/home-screen.png" alt="The TV Detox home screen" width="100%">
 
@@ -31,11 +47,9 @@ Claude Code or Codex does the work. You just press OK on the remote.
 
 ## Get started
 
-> [!WARNING]
-> **Google TV and Chromecast with Google TV:** don't turn off the TV's own home screen. On some of these devices that left them stuck restarting, and the only fix was a factory reset. Since v1.4.1, `install.sh` leaves it on for Google TV unless you opt in with `GOOGLE_TV=1`. The cleanup still works and makes the TV faster. You just keep Google TV's own home screen.
-
 **1. Turn on developer mode on the TV.**
 Settings → Device Preferences → About → press **Build** 7 times. Then turn on **USB debugging** in **Developer options**. [Stuck?](#help)
+Read the [notes and warnings](#notes-and-warnings) first.
 
 **2. Open [Claude Code](https://claude.com/claude-code) or [Codex](https://openai.com/codex) on your laptop.**
 The laptop and TV must be on the same Wi-Fi.
@@ -46,15 +60,21 @@ The laptop and TV must be on the same Wi-Fi.
 Help me clean up my Android TV and make it faster.
 My TV is a <brand and model>.
 
-1. Connect to my TV over Wi-Fi. Walk me through anything
+1. Before you change anything, tell me in plain words:
+   this turns off system apps, and that has some risk.
+   A few TVs got stuck at the logo or kept restarting,
+   and you're an AI, so you can make mistakes. undo.sh
+   and your undo list turn everything back on. Ask me to
+   confirm I want to go ahead.
+2. Connect to my TV over Wi-Fi. Walk me through anything
    I need to tap on the TV.
-2. Before changing anything, list every app in plain English:
+3. Before changing anything, list every app in plain English:
    safe to turn off, needed by the TV, and apps I use.
    Check free memory.
-3. Ask me before every change. Turn apps off instead of
+4. Ask me before every change. Turn apps off instead of
    deleting them. Keep a list of what you changed and how
    to undo it.
-4. Never turn off: Google Play services
+5. Never turn off: Google Play services
    (com.google.android.gms), Google Play, Settings,
    System UI, setup apps, the keyboard, Bluetooth, my HDMI
    inputs, the TV's input and tuner framework, or anything
@@ -62,21 +82,42 @@ My TV is a <brand and model>.
    also never turn off Google TV's home screen
    (com.google.android.apps.tv.launcherx). If you're not
    sure, leave it on.
-5. Install the home screen: download
+6. Install the home screen: download
    https://github.com/Ansub/tv-detox and run its
    install.sh with my TV and these apps: <your apps>.
-6. Turn off animations and the screensaver, and make the TV
-   sleep after 5 minutes.
-7. Wait 30 seconds after the last change, then restart the
+7. Turn off animations and make the TV sleep after 5
+   minutes. Then check the model name and ask me if the TV
+   is OLED. Keep the screensaver on unless I say it's not
+   OLED.
+8. Wait 30 seconds after the last change, then restart the
    TV once and check it starts up normally before you say
    you're done. Show me free memory before
    and after.
+9. Once everything is checked, remind me to turn off USB,
+   Network and Wireless debugging (or Developer options)
+   on the TV. Left on, other devices on my network can ask
+   to control it. I only turn it back on for undo.sh or
+   updates.
 ```
 
 That's it. It asks you before every change.
 
+**4. Turn debugging off when it's done.**
+In **Developer options**, turn off **USB debugging**, plus **Network debugging** or **Wireless debugging** if you turned them on. Or turn off **Developer options** completely.
+
+### Notes and warnings
+
+> [!WARNING]
+> **Do it at your own risk.** This turns off system apps. A few TVs got stuck at the logo or kept restarting, and the AI can make mistakes. It asks you before every change, and [`undo.sh`](#undo) plus its undo list turn everything back on. This is what worked for us, not professional advice. You're responsible for your own TV, and I'm not liable if something goes wrong.
+
+> [!WARNING]
+> **Google TV and Chromecast with Google TV:** don't turn off the TV's own home screen. On some of these devices that left them stuck restarting, and the only fix was a factory reset. Since v1.4.1, `install.sh` leaves it on for Google TV unless you opt in with `GOOGLE_TV=1`. The cleanup still works and makes the TV faster. You just keep Google TV's own home screen.
+
+> [!WARNING]
+> **OLED TVs:** keep the screensaver on. It stops a still picture from burning into the screen. Don't leave any home screen, this one included, on for hours.
+
 > [!NOTE]
-> This is what worked for us, not professional advice. Use it at your own risk. You're responsible for your own TV, and I'm not liable if something goes wrong.
+> **Turn debugging off afterwards.** While USB, Network or Wireless debugging is on, other devices on your network can ask to control the TV. Turn it off once setup is done, and back on only to run `undo.sh` or update.
 
 ## Help
 
@@ -88,6 +129,7 @@ That's it. It asks you before every change.
 2. Press OK on **Build** 7 times until you see "You are now a developer."
 3. Go back, open **Developer options** and turn on **USB debugging**. If you see **Network debugging** or **Wireless debugging**, turn that on too.
 4. The first time your laptop connects, the TV asks "Allow debugging?" Tick "Always allow" and press **Allow**.
+5. When setup is done, turn **USB debugging**, **Network debugging** and **Wireless debugging** off again (or turn off **Developer options**). Turn them back on only to run `undo.sh` or update.
 
 **Chromecast with Google TV and other newer Google TVs** usually only have **Wireless debugging**, which needs a pairing code. `install.sh <TV_IP>` alone won't connect. Instead:
 
@@ -160,6 +202,23 @@ If the TV ever asks to be set up again, or a setup screen won't finish, turn the
 
 </details>
 
+<details>
+<summary><b>Philips Android TV: Home still opens the old screen</b></summary>
+<br>
+
+On Philips Android TVs such as the 43PUS8535, Home may go through `org.droidtv.homeintentresolver`. Keep the router and remote/system services on. `install.sh` opens Settings, confirms it left the new home screen, then presses Home to test the router before keeping stock launchers off. If verification fails, it restores what it disabled. Restart once to check the new home screen opens at boot; otherwise run `undo.sh` over USB or port 5555.
+
+Plain `check.sh` only reads state; `check.sh <TV_IP> --fix` may open Settings and press Home to test routing. If Home still opens the old screen, send the install output, firmware/Android version, and these results:
+
+```sh
+adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME
+adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME
+adb shell input keyevent KEYCODE_HOME
+adb shell dumpsys window | grep mCurrentFocus
+```
+
+</details>
+
 <a id="tcl-notes"></a>
 <details>
 <summary><b>TCL TVs: what worked, and what to keep</b></summary>
@@ -191,7 +250,7 @@ Tested on a TCL Smart TV Pro (Google TV, Android 14, 2.3 GB of RAM). Every step 
 | Photo viewer, USB media player | `com.tcl.gallery`, `com.tcl.ui_mediaCenter` |
 | App manager | `com.tcl.guard` |
 | Bluetooth "listen alone" | `com.tcl.t_solo` |
-| Google TV's screensaver (about 200 MB) | `com.google.android.apps.tv.dreamx` |
+| Google TV's screensaver (about 200 MB, keep it on an OLED TV) | `com.google.android.apps.tv.dreamx` |
 
 **Tiles that stay after the cleanup.** Two TCL tiles can still show up on this home screen. **TCL Channel** is `com.tcl.partnercustomizer`, which also handles the TCL button on the remote. **TCL Home** is `com.tcl.dashboard`, TCL's quick settings panel. Both turned off without trouble.
 
@@ -226,6 +285,39 @@ adb shell ime set <the keyboard you noted>
 ```
 
 **The TCL logo at startup** is part of the TV's firmware, so it can't be turned off. On this TV, turning it off with the remote (not at the wall) let TCL's quick start wake it straight to the home screen, with no logo.
+
+</details>
+
+<details>
+<summary><b>OnePlus TVs: what worked, and what to keep</b></summary>
+<br>
+
+Tested on a OnePlus TV E00 (QLED, Android TV 11 with Google TV's home screen, 2.9 GB of RAM). The cleanup was followed by a restart, and the TV started normally and opened this home screen by itself. Free memory went from about 1.34 GB to about 1.67 GB, though part of that is just from restarting.
+
+**Home screen.** OnePlus ships two home screens: OxygenPlay (`com.oneplus.tv.launcher`) and Google TV's (`com.google.android.apps.tv.launcherx`). Turning off Google TV's is up to you and at your own risk: it worked on this TV, but it has left some Google TVs (like Chromecast) stuck restarting. Only try it if you can reconnect over USB or port 5555. If you leave it on, the cleanup still works and Home keeps opening Google TV's home screen. If you do turn it off and Home opens Google TV's setup app, run `install.sh` again with `GOOGLE_TV=1 YES_SETUP=1`, the same fix as on the TCL above.
+
+**Safe to turn off**, if you don't use them:
+
+| App | Package |
+|---|---|
+| OxygenPlay home screen | `com.oneplus.tv.launcher` |
+| OnePlus message board and promos | `com.heytap.tv.msgboard` |
+| Store demo | `fusion.android.tv.demo` |
+| User guide | `com.oneplus.tv.userguide` |
+| Weather | `net.oneplus.weather` |
+| ColorOS Relax | `com.coloros.relax.tv` |
+| Screen mirroring (Miracast) | `com.heytap.optvmiracastservice` |
+| OnePlus phone link | `com.heytap.olink`, `com.heytap.ars.sink` |
+| Bluetooth speaker mode | `com.heytap.tv.btspeaker` |
+| Camera | `com.heytap.tv.camera` |
+| AirScreen | `com.ionitech.airscreen` |
+
+**Keep these on:**
+
+- `com.heytap.tv.livetv`: Live TV, which also opens the HDMI input list. Turning it off can stop you switching inputs.
+- `com.mediatek.*`, `com.oneplus.tv.factory`, `com.oneplus.tv.remote`: the remote's buttons, the input key, the tuner and HDMI.
+
+**Remote buttons.** If you turned Google TV's home screen off, the **Guide** and **All apps** keys do nothing, because they open it. That's expected.
 
 </details>
 
@@ -362,6 +454,14 @@ HDMI tiles work the same way. Hold **OK** on one to **Rename** it — TV, PlaySt
 </details>
 
 <details>
+<summary><b>Can I change the background?</b></summary>
+<br>
+
+Yes. Pick the **Settings** tile, then **Wallpaper**. (**TV settings**, right under it, opens the TV's own settings.) There are fourteen gradients. Dark: Dusk (the default), Midnight, Plum, Forest, Graphite, Ocean and Ember. Bright: Sunset, Lagoon, Aurora, Coral, Iris, Meadow and Gold. The background changes as you move through the list; press **OK** to keep one, or **Back** to leave it as it was. They're colours only, no pictures, so every one is just as fast and uses the same memory.
+
+</details>
+
+<details>
 <summary><b>Can I get Wi-Fi and Bluetooth one press away?</b></summary>
 <br>
 
@@ -376,6 +476,7 @@ Press **Up** from your apps to reach them. A shortcut your TV has no screen for 
 
 </details>
 
+<a id="undo"></a>
 <details>
 <summary><b>How do I undo it?</b></summary>
 <br>
@@ -385,6 +486,8 @@ sh undo.sh <TV_IP>
 ```
 
 This turns your TV's own home screen back on and removes this one. To undo the cleanup too, ask Claude or Codex to reverse everything on its list.
+
+If you turned debugging off after setup, turn it back on first, then off again when you're done.
 
 </details>
 
