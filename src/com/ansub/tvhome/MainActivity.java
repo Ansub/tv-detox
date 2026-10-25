@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -33,6 +34,8 @@ import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.InputFilter;
+import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -40,9 +43,13 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.BaseAdapter;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -1111,7 +1118,7 @@ public class MainActivity extends Activity {
     }
 
     // The TV's own name comes first, and picking it resets the custom one; the rest are the usual
-    // things people plug in, so no keyboard is ever needed.
+    // things people plug in, followed by an option to type a name with the TV's keyboard.
     private void showInputNames(final String id) {
         TvInputInfo in = inputById(id);
         if (in == null) return;
@@ -1122,10 +1129,73 @@ public class MainActivity extends Activity {
         // Keep canonical preset names in storage so a language change also updates the tile.
         List<String> labels = new ArrayList<>();
         for (int i = 0; i < names.size(); i++) labels.add(i == 0 ? own : Strings.t(names.get(i)));
+        labels.add(Strings.t("Type a name…"));
         panel(Strings.t("Rename"), labels, which -> {
+            if (which == names.size()) {
+                showInputNameEditor(id, own);
+                return;
+            }
             setInputName(id, which == 0 ? null : names.get(which));
             focusedKey = id;
             buildTiles();
+        });
+    }
+
+    private void showInputNameEditor(final String id, String own) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert);
+        EditText name = new EditText(builder.getContext());
+        name.setSingleLine(true);
+        name.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_WORDS);
+        name.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        name.setFilters(new InputFilter[] {new InputFilter.LengthFilter(24)});
+        String custom = inputNames().get(id);
+        name.setText(custom != null ? custom : own);
+        final String initialName = name.getText().toString();
+        name.setSelectAllOnFocus(true);
+        name.setTextSize(TypedValue.COMPLEX_UNIT_PX, px(32));
+        name.setTextColor(Color.WHITE);
+        FrameLayout box = new FrameLayout(builder.getContext());
+        box.setPadding(px(40), px(16), px(40), 0);
+        box.addView(name, new FrameLayout.LayoutParams(-1, -2));
+        final AlertDialog dialog = builder.setTitle(Strings.t("Rename"))
+                .setView(box)
+                .setPositiveButton(android.R.string.ok, null)
+                .setNegativeButton(android.R.string.cancel, null)
+                .create();
+        Runnable save = () -> {
+            setInputName(id, name.getText().toString());
+            dialog.dismiss();
+            focusedKey = id;
+            buildTiles();
+        };
+        name.setOnEditorActionListener((v, action, event) -> {
+            if (action == EditorInfo.IME_ACTION_DONE) {
+                save.run();
+                return true;
+            }
+            return false;
+        });
+        Window window = dialog.getWindow();
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE
+                | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setCornerRadius(px(RADIUS));
+        bg.setColor(0xFF231D1F);
+        bg.setStroke(Math.max(1, px(2)), 0x17FFFFFF);
+        window.setBackgroundDrawable(bg);
+        dialog.show();
+        window.setLayout(px(800), ViewGroup.LayoutParams.WRAP_CONTENT);
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> save.run());
+        name.requestFocus();
+        name.selectAll();
+        name.post(() -> {
+            ((InputMethodManager) getSystemService(INPUT_METHOD_SERVICE))
+                    .showSoftInput(name, InputMethodManager.SHOW_IMPLICIT);
+            // Some TV keyboards move the cursor on startup; reselect after their opening animation.
+            name.postDelayed(() -> {
+                if (dialog.isShowing() && name.hasFocus()
+                        && initialName.equals(name.getText().toString())) name.selectAll();
+            }, 500);
         });
     }
 
@@ -1161,7 +1231,7 @@ public class MainActivity extends Activity {
         return getSharedPreferences(PREFS, 0);
     }
 
-    // Custom input names, keyed by the input's id. One "id=name" per line, because ids contain '/'.
+    // Custom input names, keyed by the input's id. Split only at the first '=', so names can contain '='.
     private Map<String, String> inputNames() {
         Map<String, String> out = new HashMap<>();
         for (String line : prefs().getString(PREF_INPUT_NAMES, "").split("\n")) {
@@ -1171,8 +1241,12 @@ public class MainActivity extends Activity {
         return out;
     }
 
-    // A null name goes back to the TV's own label.
+    // A null or blank name goes back to the TV's own label. Keep names on one storage line.
     private void setInputName(String id, String name) {
+        if (name != null) {
+            name = name.replace("\r", "").replace("\n", "").trim();
+            if (name.isEmpty()) name = null;
+        }
         Map<String, String> names = inputNames();
         if (name == null) names.remove(id);
         else names.put(id, name);
