@@ -884,9 +884,11 @@ public class MainActivity extends Activity {
     private List<Intent> quickIntents(String name) {
         List<Intent> all = new ArrayList<>();
         String tclType = name.equals("sound") ? "SoundPreset" : name.equals("picture") ? "picture" : null;
+        // Some TCL Google TVs (Q651G, Android 12) ship the same service inside the TV's own settings app.
         if (tclType != null)
-            all.add(new Intent(TCL_SHOW_WINDOW).setClassName("com.tcl.settings", "com.tcl.settings.ShowWindowService")
-                    .putExtra("Type", tclType));
+            for (String pkg : new String[] {"com.tcl.settings", "com.android.tv.settings"})
+                all.add(new Intent(TCL_SHOW_WINDOW).setClassName(pkg, "com.tcl.settings.ShowWindowService")
+                        .putExtra("Type", tclType));
         switch (name) {
             case "bluetooth":
                 all.add(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
