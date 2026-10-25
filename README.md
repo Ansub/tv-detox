@@ -326,6 +326,24 @@ adb shell ime set <the keyboard you noted>
 
 **The TCL logo at startup** is part of the TV's firmware, so it can't be turned off. On this TV, turning it off with the remote (not at the wall) let TCL's quick start wake it straight to the home screen, with no logo.
 
+**TCL Q651G (Google TV, Android 12).** Also tested on two TCL Q651G TVs (43" and 50", 1.8 GB of RAM) with `GOOGLE_TV=1 YES_SETUP=1` on port 5555. Both started normally after every restart, and free memory went from about 560 MB to about 840 MB. Some things differ from the TV above:
+
+- **Keep `com.tcl.tv` if you use HDMI.** On these TVs its player is the only app that opens an input, so with it off the HDMI tiles do nothing. Turning it back on fixed them straight away.
+- **Wi-Fi was forgotten.** On both TVs, the Wi-Fi network was forgotten during `install.sh`, as Google TV's home screen and setup app went off. Pick the network and enter the password again on the TV, then reconnect on port 5555. It stayed through restarts afterwards, and turning the setup app on and off again later didn't drop it, so the cause isn't clear.
+- **Usage & diagnostics** (Settings > Privacy) belongs to the setup app, so it won't open once that's off. To switch it off, turn the setup app on for a moment and open the page directly. While the setup app is on, don't press Home: it opens the setup app.
+
+  ```sh
+  adb shell pm enable com.google.android.tungsten.setupwraith
+  adb shell am start -a com.google.android.settings.USAGE_AND_DIAGNOSTICS_SETTING
+  # switch it off on the TV, press Back, then:
+  adb shell pm disable-user --user 0 com.google.android.tungsten.setupwraith
+  adb shell cmd package set-home-activity com.ansub.tvhome/.MainActivity
+  ```
+
+- **The app buttons on the remote** (YouTube, Apple TV, Pluto TV, Netflix) stopped working, even for apps that are still installed. TCL's system catches those buttons and hands the launch to one of its own apps; with the TCL apps above off, nothing opens. Which app it needs wasn't confirmed: `com.tcl.partnercustomizer` and `com.tcl.ttvs` are the likely ones.
+- **No TCL keyboard.** `com.tcl.inputmethod.international` isn't on these TVs, so Gboard is the only keyboard: keep it on.
+- **Also turned off without trouble:** TCL TV+ (`com.tcl.tv.plus`, free channels with ads), Samba TV (`tv.samba.ssm.ui`, which recognises what's on screen for ads), `com.tcl.tv.tclhome_passive`, `com.tcl.smartlink.core` and `com.tcl.hotelmenu`. AirPlay (`com.tcl.airplay2`, `com.realtek.airplay2`) can go too if you don't use it.
+
 </details>
 
 <details>
