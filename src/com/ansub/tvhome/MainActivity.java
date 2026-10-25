@@ -1080,7 +1080,10 @@ public class MainActivity extends Activity {
         List<String> names = new ArrayList<>();
         names.add(own);
         for (String p : INPUT_PRESETS) if (!p.equals(own)) names.add(p);
-        panel(Strings.t("Rename"), names, which -> {
+        // Keep canonical preset names in storage so a language change also updates the tile.
+        List<String> labels = new ArrayList<>();
+        for (int i = 0; i < names.size(); i++) labels.add(i == 0 ? own : Strings.t(names.get(i)));
+        panel(Strings.t("Rename"), labels, which -> {
             setInputName(id, which == 0 ? null : names.get(which));
             focusedKey = id;
             buildTiles();
@@ -1297,7 +1300,7 @@ public class MainActivity extends Activity {
     // TV's own name (like "HDMI 1").
     private String inputLabel(TvInputInfo in) {
         String custom = inputNames().get(in.getId());
-        return custom != null ? custom : tvInputLabel(in);
+        return custom != null ? Strings.t(custom) : tvInputLabel(in);
     }
 
     private String tvInputLabel(TvInputInfo in) {
