@@ -4,6 +4,9 @@
 #   sh install.sh <TV_IP>                          your TV apps, picked for you
 #   sh install.sh <TV_IP> "com.netflix.ninja,com.google.android.youtube.tv"
 #   sh install.sh <TV_IP> "" "bluetooth,sound,picture"   adds settings shortcuts by the clock
+#   CLOCK=24 sh install.sh <TV_IP>               24-hour clock (12, 24, or auto for the TV's own)
+#   FAKE_INPUT=1 sh install.sh <emulator>        testing only: add a throwaway TV input, so an
+#                                                emulator with no HDMI ports still has one to draw
 #
 # On Google TV (Chromecast with Google TV and others) the TV's own home screen is left on.
 # GOOGLE_TV=1 turns it off anyway; only do that if you can reconnect over USB or port 5555.
@@ -51,11 +54,22 @@ if ! out=$(adb -s "$TV" install -r "$APK" 2>&1); then
   esac
 fi
 
-if [ -n "$APPS" ] || [ -n "$QUICK" ]; then
+# Testing only: a TV input service with nothing behind it, for an emulator, which has no HDMI
+# ports. undo.sh removes it again. On a real TV there is no reason to turn this on.
+if [ "$FAKE_INPUT" = 1 ]; then
+  FAKE=ci/fake-input/out/fakeinput.apk
+  [ -f "$FAKE" ] || sh ci/fake-input/build.sh
+  echo "Installing the test input (emulators only)…"
+  adb -s "$TV" install -r "$FAKE" >/dev/null
+fi
+
+if [ -n "$APPS" ] || [ -n "$QUICK" ] || [ -n "$CLOCK" ] || [ -n "$FAKE_INPUT" ]; then
   # The stamp makes the app apply this list once, even if Android later replays this start.
   set -- --es stamp "$(date +%s)"
   [ -n "$APPS" ] && set -- "$@" --es apps "\"$APPS\""
   [ -n "$QUICK" ] && set -- "$@" --es quick "\"$QUICK\""
+  [ -n "$CLOCK" ] && set -- "$@" --es clock "\"$CLOCK\""
+  [ "$FAKE_INPUT" = 1 ] && set -- "$@" --es fakeinputs 1
   adb -s "$TV" shell am start -n com.ansub.tvhome/.MainActivity "$@" >/dev/null
 fi
 

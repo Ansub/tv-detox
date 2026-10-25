@@ -35,6 +35,12 @@ echo "$x" | grep -q 'text="Settings"' || fail "no Settings tile"
 echo "$x" | grep -qE 'text="[0-9]{1,2}:[0-9]{2}"' || fail "no clock"
 tiles=$(echo "$x" | grep -o 'focusable="true"' | wc -l | tr -d ' ')
 echo "   $tiles tiles"
+if [ "$FAKE_INPUT" = 1 ]; then
+  echo "== emulator input registered"
+  # Its tile may already have a saved name from a previous manual test.
+  adb -s "$TV" shell dumpsys tv_input | grep -q 'com.ansub.fakeinput/.FakeInputService' \
+    || fail "fake input not registered"
+fi
 
 echo "== remote: move right, open Settings, come back with Home"
 adb -s "$TV" shell input keyevent KEYCODE_DPAD_RIGHT
@@ -69,6 +75,11 @@ rc=0; sh check.sh "$TV" "$list" >/dev/null 2>&1 || rc=$?
 
 echo "== undo puts the TV back"
 sh undo.sh "$TV" >/dev/null
+if [ "$FAKE_INPUT" = 1 ]; then
+  if adb -s "$TV" shell pm list packages com.ansub.fakeinput | grep -q 'package:com.ansub.fakeinput'; then
+    fail "undo left the fake input installed"
+  fi
+fi
 sleep 3
 home=$(adb -s "$TV" shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -1 | tr -d '\r')
 case "$home" in *com.ansub.tvhome*|"") fail "after undo, home is '$home'" ;; esac

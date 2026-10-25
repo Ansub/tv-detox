@@ -1,0 +1,2 @@
+<tv-input xmlns:android="http://schemas.android.com/apk/res/android"
+    android:label="Fake HDMI" />

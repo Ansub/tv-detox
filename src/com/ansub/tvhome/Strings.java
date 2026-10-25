@@ -4,14 +4,15 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-// The home screen's own labels, in the TV's language. App names, HDMI names and the clock come
-// from the TV already. A language without a table, or a label without a translation, stays in
-// English. To add a language, add a table below in the same order as EN.
+// The home screen's own labels and input presets, in the TV's language. App names, original
+// HDMI names and the clock come from the TV already. A language without a table, or a label
+// without a translation, stays in English. To add a language, add a table in the same order as EN.
 final class Strings {
     private static final String[] EN = {
         "Settings", "Add app", "Network", "Offline", "Sound", "Picture",
         "Move", "Replace", "Remove from home", "Uninstall", "App info",
         "Use the arrows to move it, then press OK", "Every app is already here", "Add an app", "Replace %s", "Wallpaper", "TV settings", "Brightness",
+        "Rename", "Show hidden inputs", "TV", "Laptop", "PC", "Blu-ray", "Soundbar", "Type a name…",
     };
 
     // Keyed by language ("de"), or language-country ("zh-TW") where a country writes it differently.
@@ -21,31 +22,37 @@ final class Strings {
             "الإعدادات", "إضافة تطبيق", "الشبكة", "غير متصل", "الصوت", "الصورة",
             "نقل", "استبدال", "إزالة من الشاشة الرئيسية", "إلغاء التثبيت", "معلومات التطبيق",
             "استخدم الأسهم لنقله، ثم اضغط OK", "كل التطبيقات موجودة هنا", "إضافة تطبيق", "استبدال %s", "الخلفية", "إعدادات التلفزيون", "السطوع",
+            "إعادة التسمية", "إظهار المدخلات المخفية", "تلفزيون", "حاسوب محمول", "حاسوب", "بلو راي", "مكبر صوت شريطي", "اكتب اسمًا…",
         });
         LANGS.put("de", new String[] {
             "Einstellungen", "App hinzufügen", "Netzwerk", "Offline", "Ton", "Bild",
             "Verschieben", "Ersetzen", "Vom Startbildschirm entfernen", "Deinstallieren", "App-Info",
             "Mit den Pfeiltasten verschieben, dann OK drücken", "Alle Apps sind schon da", "App hinzufügen", "%s ersetzen", "Hintergrund", "TV-Einstellungen", "Helligkeit",
+            "Umbenennen", "Ausgeblendete Eingänge anzeigen", "TV", "Laptop", "PC", "Blu-ray", "Soundbar", "Namen eingeben…",
         });
         LANGS.put("es", new String[] {
             "Ajustes", "Añadir app", "Red", "Sin conexión", "Sonido", "Imagen",
             "Mover", "Reemplazar", "Quitar del inicio", "Desinstalar", "Info. de la app",
             "Usa las flechas para moverla y pulsa OK", "Todas las apps ya están aquí", "Añadir una app", "Reemplazar %s", "Fondo de pantalla", "Ajustes de la TV", "Brillo",
+            "Renombrar", "Mostrar entradas ocultas", "TV", "Portátil", "PC", "Blu-ray", "Barra de sonido", "Escribe un nombre…",
         });
         LANGS.put("fr", new String[] {
             "Paramètres", "Ajouter une app", "Réseau", "Hors ligne", "Son", "Image",
             "Déplacer", "Remplacer", "Retirer de l'accueil", "Désinstaller", "Infos sur l'app",
             "Utilisez les flèches pour la déplacer, puis appuyez sur OK", "Toutes les apps sont déjà là", "Ajouter une app", "Remplacer %s", "Fond d'écran", "Paramètres du téléviseur", "Luminosité",
+            "Renommer", "Afficher les entrées masquées", "TV", "Ordinateur portable", "PC", "Blu-ray", "Barre de son", "Saisir un nom…",
         });
         LANGS.put("hi", new String[] {
             "सेटिंग्स", "ऐप जोड़ें", "नेटवर्क", "ऑफ़लाइन", "ध्वनि", "चित्र",
             "ले जाएँ", "बदलें", "होम से हटाएँ", "अनइंस्टॉल करें", "ऐप की जानकारी",
             "तीर से खिसकाएँ, फिर OK दबाएँ", "सभी ऐप पहले से यहाँ हैं", "ऐप जोड़ें", "%s बदलें", "वॉलपेपर", "टीवी सेटिंग्स", "चमक",
+            "नाम बदलें", "छिपे हुए इनपुट दिखाएँ", "टीवी", "लैपटॉप", "पीसी", "ब्लू-रे", "साउंडबार", "नाम लिखें…",
         });
         String[] id = {
             "Setelan", "Tambah aplikasi", "Jaringan", "Offline", "Suara", "Gambar",
             "Pindahkan", "Ganti", "Hapus dari beranda", "Uninstal", "Info aplikasi",
             "Gunakan tombol panah untuk memindahkan, lalu tekan OK", "Semua aplikasi sudah ada di sini", "Tambah aplikasi", "Ganti %s", "Wallpaper", "Setelan TV", "Kecerahan",
+            "Ubah nama", "Tampilkan input tersembunyi", "TV", "Laptop", "PC", "Blu-ray", "Soundbar", "Ketik nama…",
         };
         LANGS.put("id", id);
         LANGS.put("in", id); // Java's old code for Indonesian, which Android still reports
@@ -54,56 +61,67 @@ final class Strings {
             "Impostazioni", "Aggiungi app", "Rete", "Offline", "Audio", "Immagine",
             "Sposta", "Sostituisci", "Rimuovi dalla home", "Disinstalla", "Info app",
             "Usa le frecce per spostarla, poi premi OK", "Tutte le app sono già qui", "Aggiungi un'app", "Sostituisci %s", "Sfondo", "Impostazioni TV", "Luminosità",
+            "Rinomina", "Mostra ingressi nascosti", "TV", "Portatile", "PC", "Blu-ray", "Soundbar", "Digita un nome…",
         });
         LANGS.put("ja", new String[] {
             "設定", "アプリを追加", "ネットワーク", "オフライン", "サウンド", "画像",
             "移動", "置き換え", "ホームから削除", "アンインストール", "アプリ情報",
             "矢印キーで移動して、OK を押してください", "すべてのアプリが追加済みです", "アプリを追加", "%s を置き換え", "壁紙", "テレビの設定", "明るさ",
+            "名前を変更", "非表示の入力を表示", "テレビ", "ノートパソコン", "パソコン", "ブルーレイ", "サウンドバー", "名前を入力…",
         });
         LANGS.put("ko", new String[] {
             "설정", "앱 추가", "네트워크", "오프라인", "소리", "화면",
             "이동", "바꾸기", "홈에서 삭제", "제거", "앱 정보",
             "화살표로 옮긴 다음 OK를 누르세요", "모든 앱이 이미 있습니다", "앱 추가", "%s 바꾸기", "배경화면", "TV 설정", "밝기",
+            "이름 변경", "숨긴 입력 표시", "TV", "노트북", "PC", "블루레이", "사운드바", "이름 입력…",
         });
         LANGS.put("nl", new String[] {
             "Instellingen", "App toevoegen", "Netwerk", "Offline", "Geluid", "Beeld",
             "Verplaatsen", "Vervangen", "Van startscherm halen", "Verwijderen", "App-info",
             "Verplaats met de pijltjes en druk dan op OK", "Alle apps staan er al", "Een app toevoegen", "%s vervangen", "Achtergrond", "Tv-instellingen", "Helderheid",
+            "Naam wijzigen", "Verborgen ingangen tonen", "TV", "Laptop", "PC", "Blu-ray", "Soundbar", "Typ een naam…",
         });
         LANGS.put("pl", new String[] {
             "Ustawienia", "Dodaj aplikację", "Sieć", "Offline", "Dźwięk", "Obraz",
             "Przenieś", "Zamień", "Usuń z ekranu głównego", "Odinstaluj", "Informacje o aplikacji",
             "Przesuń strzałkami, potem naciśnij OK", "Wszystkie aplikacje już tu są", "Dodaj aplikację", "Zamień %s", "Tapeta", "Ustawienia telewizora", "Jasność",
+            "Zmień nazwę", "Pokaż ukryte wejścia", "Telewizor", "Laptop", "Komputer", "Blu-ray", "Soundbar", "Wpisz nazwę…",
         });
         LANGS.put("pt", new String[] { // Brazilian Portuguese
             "Configurações", "Adicionar app", "Rede", "Sem conexão", "Som", "Imagem",
             "Mover", "Substituir", "Remover do início", "Desinstalar", "Informações do app",
             "Use as setas para mover e depois aperte OK", "Todos os apps já estão aqui", "Adicionar um app", "Substituir %s", "Plano de fundo", "Configurações da TV", "Brilho",
+            "Renomear", "Mostrar entradas ocultas", "TV", "Notebook", "PC", "Blu-ray", "Barra de som", "Digite um nome…",
         });
         LANGS.put("ru", new String[] {
             "Настройки", "Добавить", "Сеть", "Нет сети", "Звук", "Изображение",
             "Переместить", "Заменить", "Убрать с главного экрана", "Удалить", "О приложении",
             "Перемещайте стрелками, затем нажмите OK", "Все приложения уже здесь", "Добавить приложение", "Заменить %s", "Обои", "Настройки телевизора", "Яркость",
+            "Переименовать", "Показать скрытые входы", "Телевизор", "Ноутбук", "ПК", "Blu-ray", "Саундбар", "Введите название…",
         });
         LANGS.put("tr", new String[] {
             "Ayarlar", "Uygulama ekle", "Ağ", "Çevrimdışı", "Ses", "Görüntü",
             "Taşı", "Değiştir", "Ana ekrandan kaldır", "Kaldır", "Uygulama bilgisi",
             "Ok tuşlarıyla taşıyın, sonra OK'e basın", "Tüm uygulamalar zaten burada", "Uygulama ekle", "Değiştir: %s", "Duvar kağıdı", "TV ayarları", "Parlaklık",
+            "Yeniden adlandır", "Gizli girişleri göster", "TV", "Dizüstü bilgisayar", "PC", "Blu-ray", "Soundbar", "Bir ad yazın…",
         });
         LANGS.put("uk", new String[] {
             "Налаштування", "Додати додаток", "Мережа", "Офлайн", "Звук", "Зображення",
             "Перемістити", "Замінити", "Прибрати з головного екрана", "Видалити", "Інформація про додаток",
             "Переміщуйте стрілками, а потім натисніть OK", "Усі додатки вже тут", "Додати додаток", "Замінити %s", "Шпалери", "Налаштування телевізора", "Яскравість",
+            "Перейменувати", "Показати приховані входи", "Телевізор", "Ноутбук", "ПК", "Blu-ray", "Саундбар", "Введіть назву…",
         });
         LANGS.put("zh", new String[] { // Simplified Chinese
             "设置", "添加应用", "网络", "未联网", "声音", "图像",
             "移动", "替换", "从主屏幕移除", "卸载", "应用信息",
             "用方向键移动，然后按 OK", "所有应用都已在这里", "添加应用", "替换 %s", "壁纸", "电视设置", "亮度",
+            "重命名", "显示隐藏的输入", "电视", "笔记本电脑", "电脑", "蓝光", "条形音箱", "输入名称…",
         });
         String[] hant = { // Traditional Chinese
             "設定", "新增應用程式", "網路", "離線", "音效", "影像",
             "移動", "取代", "從主畫面移除", "解除安裝", "應用程式資訊",
             "使用方向鍵移動，然後按 OK", "所有應用程式都已在這裡", "新增應用程式", "取代 %s", "桌布", "電視設定", "亮度",
+            "重新命名", "顯示隱藏的輸入", "電視", "筆記型電腦", "電腦", "藍光", "聲霸", "輸入名稱…",
         };
         LANGS.put("zh-TW", hant);
         LANGS.put("zh-HK", hant);
