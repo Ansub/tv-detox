@@ -49,8 +49,13 @@ adb -s "$TV" shell input keyevent KEYCODE_HOME
 wait_home || fail "Home didn't come back"
 
 echo "== Settings screen opens and Back comes home"
-adb -s "$TV" shell am start -n com.ansub.tvhome/.MainActivity --es show settings >/dev/null; sleep 2
-focus | grep -q com.ansub.tvhome/com.ansub.tvhome.SettingsActivity || fail "Settings screen didn't open"
+adb -s "$TV" shell am start -n com.ansub.tvhome/.MainActivity --es show settings >/dev/null
+opened=
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+  focus | grep -q com.ansub.tvhome/com.ansub.tvhome.SettingsActivity && { opened=1; break; }
+  sleep 1
+done
+[ -n "$opened" ] || fail "Settings screen didn't open"
 x=$(ui)
 echo "$x" | grep -q 'text="Screensaver &amp; sleep"' || fail "Settings screen has no Screensaver & sleep"
 echo "$x" | grep -q 'text="All Android settings"' || fail "Settings screen has no All Android settings"

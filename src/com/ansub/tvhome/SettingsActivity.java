@@ -425,7 +425,8 @@ public class SettingsActivity extends Activity {
         if (Build.VERSION.SDK_INT >= 23) {
             heading(Strings.t("Sound"));
             AudioManager am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-            String out = box ? "HDMI" : Strings.t("TV speakers");
+            // Media goes to Bluetooth headphones while they're connected, otherwise to HDMI or the speakers.
+            String out = box ? "HDMI" : Strings.t("TV speakers"), bluetooth = null;
             List<String> formats = new ArrayList<>();
             if (am != null) for (AudioDeviceInfo dev : am.getDevices(AudioManager.GET_DEVICES_OUTPUTS)) {
                 int type = dev.getType();
@@ -437,10 +438,10 @@ public class SettingsActivity extends Activity {
                         if (f != null && !formats.contains(f)) formats.add(f);
                     }
                 } else if (type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP) {
-                    out = "Bluetooth: " + dev.getProductName();
+                    bluetooth = "Bluetooth: " + dev.getProductName();
                 }
             }
-            info(Strings.t("Audio goes to"), out);
+            info(Strings.t("Audio goes to"), bluetooth != null ? bluetooth : out);
             if (!formats.isEmpty()) info(Strings.t("Surround formats"), TextUtils.join(", ", formats));
         }
 
@@ -667,7 +668,11 @@ public class SettingsActivity extends Activity {
         }
     }
 
+    // A day or more (some TVs store "never" as the largest number there is) reads Never, and under a
+    // minute reads in seconds.
     private static String minutes(int ms) {
+        if (ms <= 0 || ms >= 86400000) return Strings.t("Never");
+        if (ms < 60000) return (ms / 1000) + " s";
         int m = ms / 60000;
         if (m >= 60 && m % 60 == 0) return m == 60 ? Strings.t("1 hour") : String.format(Strings.t("%d hours"), m / 60);
         return m == 1 ? Strings.t("1 minute") : String.format(Strings.t("%d minutes"), m);

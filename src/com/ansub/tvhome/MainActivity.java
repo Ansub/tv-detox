@@ -240,6 +240,7 @@ public class MainActivity extends Activity {
         root.addView(moveHint, at(px(MARGIN), px(ROW1_TOP - 64), -2, -2));
 
         setContentView(scroller);
+        if (state == null) show(getIntent()); // started fresh by the Settings screen, see show()
 
         IntentFilter f = new IntentFilter();
         f.addAction(Intent.ACTION_PACKAGE_ADDED);
@@ -280,8 +281,11 @@ public class MainActivity extends Activity {
     // --es show wallpaper|brightness|settings. The Settings screen's Wallpaper and Picture & brightness
     // rows come back here: the picker shows over the home screen it changes, and Brightness opens the
     // TV's own picture settings. "settings" opens the Settings screen, for ci/smoke-test.sh.
+    // Handled once: the extra is removed, so Android restarting the home screen with the same intent
+    // later doesn't open them again.
     private boolean show(Intent intent) {
         String show = intent == null ? null : intent.getStringExtra("show");
+        if (show != null) intent.removeExtra("show");
         if ("wallpaper".equals(show)) getWindow().getDecorView().post(this::showWallpapers);
         else if ("brightness".equals(show)) openBrightness();
         else if ("settings".equals(show)) startActivity(new Intent(this, SettingsActivity.class));
@@ -1425,11 +1429,17 @@ public class MainActivity extends Activity {
 
     // A TV has inputs of its own (HDMI, AV); a box that plugs into one, like NVIDIA Shield, Chromecast
     // or a Mi Box, has none. Only a TV has a screen to dim and speakers of its own.
+    // Some TVs register their HDMI inputs a while after starting (#52), so with none yet the HDMI-CEC
+    // device type decides: 0 is a TV, 4 a playback device like a box.
     static boolean isBox(Context c) {
         TvInputManager tim = (TvInputManager) c.getSystemService(Context.TV_INPUT_SERVICE);
-        if (tim == null) return true;
-        for (TvInputInfo in : tim.getTvInputList()) if (in.isPassthroughInput()) return false;
-        return true;
+        if (tim != null) for (TvInputInfo in : tim.getTvInputList()) if (in.isPassthroughInput()) return false;
+        String type = "";
+        try {
+            type = String.valueOf(Class.forName("android.os.SystemProperties")
+                    .getMethod("get", String.class).invoke(null, "ro.hdmi.device_type"));
+        } catch (Throwable ignored) {}
+        return !Arrays.asList(type.split(",")).contains("0");
     }
 
     private TvInputInfo inputById(String id) {

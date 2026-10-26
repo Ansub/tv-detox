@@ -37,7 +37,8 @@ public class StarfieldDream extends DreamService {
         private final Paint time = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint date = new Paint(Paint.ANTI_ALIAS_FLAG);
         private float clockX = -1, clockY;
-        private long clockMoved;
+        private long clockMoved, shownMinute = -1;
+        private String t, d; // the time and date, made again only when the minute changes
 
         private final Runnable tick = new Runnable() {
             @Override public void run() { invalidate(); postDelayed(this, FRAME_MS); }
@@ -85,8 +86,11 @@ public class StarfieldDream extends DreamService {
             long now = System.currentTimeMillis();
             time.setTextSize(h * 0.065f);
             date.setTextSize(h * 0.028f);
-            String t = DateFormat.getTimeFormat(getContext()).format(new Date(now));
-            String d = DateFormat.format(Strings.datePattern(), now).toString();
+            if (now / 60000 != shownMinute) {
+                shownMinute = now / 60000;
+                t = DateFormat.getTimeFormat(getContext()).format(new Date(now));
+                d = DateFormat.format(Strings.datePattern(), now).toString();
+            }
             float width = Math.max(time.measureText(t), date.measureText(d));
             if (clockX < 0 || now - clockMoved > CLOCK_MOVE_MS) {
                 float m = h * 0.06f;
