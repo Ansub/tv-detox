@@ -13,6 +13,25 @@ final class Strings {
         "Move", "Replace", "Remove from home", "Uninstall", "App info",
         "Use the arrows to move it, then press OK", "Every app is already here", "Add an app", "Replace %s", "Wallpaper", "TV settings", "Brightness",
         "Rename", "Show hidden inputs", "TV", "Laptop", "PC", "Blu-ray", "Soundbar", "Type a name…",
+        // The Settings screen. Not translated yet: a table without them shows them in English.
+        "The colour behind your home screen. Moving through the list shows each one; OK keeps it.", "Choose wallpaper",
+        "Everything else: accounts, apps, accessibility, date and time, language, updates and more.",
+        "Open Android settings",
+        "To change these here, run install.sh again from your computer: it gives this home screen the permission once. Until then this page only shows them.",
+        "Off", "Screensaver", "Starts after", "Start the screensaver after",
+        "Sleep moved to %s, so the screensaver has time to show.", "Never", "Preview screensaver", "Sleep",
+        "Sleeps after", "Put it to sleep after",
+        "Times count from the last button you pressed. The screensaver shows first, then it sleeps.", "Connection",
+        "Connected with", "Signal", "Band", "Link speed", "IP address", "Wi-Fi & network settings", "Bluetooth",
+        "Not available", "On", "Paired devices", "None", "Connected", "Not connected",
+        "Pair a remote, controller or headphones", "Resolution", "Refresh rate", "HDR", "TV speakers", "Audio goes to",
+        "Surround formats", "Picture & brightness", "Resolution, HDR & sound",
+        "On NVIDIA Shield these are under Device Preferences, then Display & Sound.", "This device", "Model", "Software",
+        "On for", "Memory & storage", "Memory", "%s free of %s", "Storage", "Home screen version",
+        "Run install.sh again from your computer to change this here", "Can't show a preview here", "1 hour",
+        "%d hours", "1 minute", "%d minutes", "Screensaver & sleep", "Network & Bluetooth", "Display & sound",
+        "Device info & storage", "All Android settings", "Ethernet", "Wi-Fi", "Other", "Very weak", "Weak", "Fair",
+        "Good", "Excellent",
     };
 
     // Keyed by language ("de"), or language-country ("zh-TW") where a country writes it differently.

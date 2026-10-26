@@ -122,6 +122,15 @@ if [ "$(sh_tv getprop ro.build.version.sdk)" -ge 29 ]; then
 fi
 sh_tv cmd package set-home-activity "$ME" >/dev/null 2>&1 || true
 
+# The Settings screen changes the screensaver and sleep timers with these two, which only adb can
+# grant, and lists paired Bluetooth devices with the third (Android 12+ asks for it). Without them it
+# just shows the current values. Uninstalling the home screen takes them away again.
+sh_tv pm grant com.ansub.tvhome android.permission.WRITE_SECURE_SETTINGS >/dev/null 2>&1 || true
+sh_tv appops set com.ansub.tvhome WRITE_SETTINGS allow >/dev/null 2>&1 || true
+if [ "$(sh_tv getprop ro.build.version.sdk)" -ge 31 ]; then
+  sh_tv pm grant com.ansub.tvhome android.permission.BLUETOOTH_CONNECT >/dev/null 2>&1 || true
+fi
+
 # Known TV home screens that are safe to turn off.
 LAUNCHERS="com.google.android.tvlauncher com.google.android.apps.tv.launcherx com.google.android.leanbacklauncher
   com.mitv.tvhome com.amazon.tv.launcher"

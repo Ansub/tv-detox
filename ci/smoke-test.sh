@@ -48,6 +48,15 @@ adb -s "$TV" shell am start -a android.settings.SETTINGS >/dev/null; sleep 3
 adb -s "$TV" shell input keyevent KEYCODE_HOME
 wait_home || fail "Home didn't come back"
 
+echo "== Settings screen opens and Back comes home"
+adb -s "$TV" shell am start -n com.ansub.tvhome/.MainActivity --es show settings >/dev/null; sleep 2
+focus | grep -q com.ansub.tvhome/com.ansub.tvhome.SettingsActivity || fail "Settings screen didn't open"
+x=$(ui)
+echo "$x" | grep -q 'text="Screensaver &amp; sleep"' || fail "Settings screen has no Screensaver & sleep"
+echo "$x" | grep -q 'text="All Android settings"' || fail "Settings screen has no All Android settings"
+adb -s "$TV" shell input keyevent KEYCODE_BACK
+wait_home || fail "Back from the Settings screen didn't come home"
+
 echo "== custom app list"
 # Use whatever TV app this device has (test images may have none).
 app=$(adb -s "$TV" shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.LEANBACK_LAUNCHER \

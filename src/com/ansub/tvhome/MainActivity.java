@@ -125,8 +125,11 @@ public class MainActivity extends Activity {
     private static final int GRID_MIN_TOP = 400; // more rows push the grid up, but not into the clock
     private static final int ICON_TOP = 76, ICON_BUTTON = 72, ICON_SIZE = 40, ICON_GAP = 12; // level with the date
 
-    // The Settings tile opens a small menu: the home screen's own settings, then the TV's.
-    private static final String[] SETTINGS_ITEMS = {"Wallpaper", "Brightness", "TV settings"};
+    // The Settings tile opens SettingsActivity: screensaver and sleep, network, picture and sound,
+    // device info, the wallpaper picker and the TV's own settings.
+    // NVIDIA Shield lists Android TV's Display & Sound page but ships without it: it starts, then
+    // crashes in TvSettings with ClassNotFoundException. Its own Display & Sound is inside TV settings.
+    static final boolean SHIELD = "NVIDIA".equalsIgnoreCase(android.os.Build.MANUFACTURER);
     // Android TV 11 and later (Google TV too) has no Display page, but its "Display & Sound" page holds Picture.
     private static final String[] TV_DISPLAY_SOUND = {"com.android.tv.settings",
             "com.android.tv.settings.device.displaysound.DisplaySoundActivity"};
@@ -136,7 +139,7 @@ public class MainActivity extends Activity {
     // the default.
     private static final String[] WALLPAPER_NAMES = {"Dusk", "Midnight", "Plum", "Forest", "Graphite", "Ocean", "Ember",
             "Sunset", "Lagoon", "Aurora", "Coral", "Iris", "Meadow", "Gold"};
-    private static final int[][] WALLPAPERS = {
+    static final int[][] WALLPAPERS = {
         {0xFF15100F, 0xFF0A0809, 0xFF050405, 0x36FF8048, 0x2EAA3C8C},
         {0xFF0E1220, 0xFF080A13, 0xFF040509, 0x384A6CFF, 0x2E5A3CC8},
         {0xFF170E19, 0xFF0C070D, 0xFF050306, 0x38C050B4, 0x2E6440D2},
@@ -154,7 +157,7 @@ public class MainActivity extends Activity {
     };
     private float scale = 1f;
 
-    private static Typeface regular, semibold;
+    static Typeface regular, semibold; // also used by SettingsActivity
 
     private FrameLayout root; // the page, inside a vertical scroller
     private int tileW, tileH, gridTop; // app grid geometry, set by buildTiles
@@ -265,12 +268,25 @@ public class MainActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        if (show(intent)) return;
         // A clock change needs the whole page rebuilt; a new app list only needs the tiles.
         boolean clock = intent != null && intent.hasExtra("clock");
         if (saveConfig(intent)) {
             if (clock) recreate();
             else buildTiles();
         }
+    }
+
+    // --es show wallpaper|brightness|settings. The Settings screen's Wallpaper and Picture & brightness
+    // rows come back here: the picker shows over the home screen it changes, and Brightness opens the
+    // TV's own picture settings. "settings" opens the Settings screen, for ci/smoke-test.sh.
+    private boolean show(Intent intent) {
+        String show = intent == null ? null : intent.getStringExtra("show");
+        if ("wallpaper".equals(show)) getWindow().getDecorView().post(this::showWallpapers);
+        else if ("brightness".equals(show)) openBrightness();
+        else if ("settings".equals(show)) startActivity(new Intent(this, SettingsActivity.class));
+        else return false;
+        return true;
     }
 
     // Saves an app list passed with --es apps "...", shortcuts passed with --es quick "...", and a
@@ -420,24 +436,29 @@ public class MainActivity extends Activity {
         return super.onKeyUp(code, ev);
     }
 
-    // Static gradient, drawn once by the window: no extra view, no animation.
-    private Drawable background(int[] c) {
+    // Static gradient, drawn once by the window: no extra view, no animation. SettingsActivity sits on
+    // the same one.
+    static Drawable background(int[] c, float scale) {
         GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[] {c[0], c[1], c[2]});
-        GradientDrawable top = radial(c[3], 0.08f, -0.12f, px(1250));
-        GradientDrawable bottom = radial(c[4], 1.0f, 1.1f, px(1000));
+        GradientDrawable top = radial(c[3], 0.08f, -0.12f, Math.round(1250 * scale));
+        GradientDrawable bottom = radial(c[4], 1.0f, 1.1f, Math.round(1000 * scale));
         for (GradientDrawable g : new GradientDrawable[] {base, top, bottom}) g.setDither(true);
         return new LayerDrawable(new Drawable[] {base, top, bottom});
     }
 
     // The saved wallpaper, as an index into WALLPAPERS (Dusk if none is saved).
     private int wallpaper() {
-        String saved = getSharedPreferences(PREFS, 0).getString("wallpaper", null);
+        return wallpaperIndex(this);
+    }
+
+    static int wallpaperIndex(Context c) {
+        String saved = c.getSharedPreferences(PREFS, 0).getString("wallpaper", null);
         return Math.max(0, Arrays.asList(WALLPAPER_NAMES).indexOf(saved));
     }
 
     private void showWallpaper(int i) {
-        getWindow().setBackgroundDrawable(background(WALLPAPERS[i]));
+        getWindow().setBackgroundDrawable(background(WALLPAPERS[i], scale));
     }
 
     // The wallpapers, each with a small dot of its colours. Moving through the list shows each one
@@ -756,11 +777,7 @@ public class MainActivity extends Activity {
             showAddMenu(-1);
             return;
         } else if (SETTINGS.equals(key)) {
-            dropdown(tile(SETTINGS), SETTINGS_ITEMS, which -> {
-                if (which == 0) showWallpapers();
-                else if (which == 1) openBrightness();
-                else openTvSettings();
-            });
+            startActivity(new Intent(this, SettingsActivity.class));
             return;
         } else if (isInput(key)) {
             openInput(key);
@@ -1406,6 +1423,15 @@ public class MainActivity extends Activity {
         return out;
     }
 
+    // A TV has inputs of its own (HDMI, AV); a box that plugs into one, like NVIDIA Shield, Chromecast
+    // or a Mi Box, has none. Only a TV has a screen to dim and speakers of its own.
+    static boolean isBox(Context c) {
+        TvInputManager tim = (TvInputManager) c.getSystemService(Context.TV_INPUT_SERVICE);
+        if (tim == null) return true;
+        for (TvInputInfo in : tim.getTvInputList()) if (in.isPassthroughInput()) return false;
+        return true;
+    }
+
     private TvInputInfo inputById(String id) {
         for (TvInputInfo in : allInputs()) if (in.getId().equals(id)) return in;
         return null;
@@ -1444,7 +1470,7 @@ public class MainActivity extends Activity {
     }
 
     // Xiaomi TVs ship MiLan Pro but don't register it by name; every other TV gets Roboto.
-    private static void loadFonts() {
+    static void loadFonts() {
         if (regular != null) return;
         regular = fromFile("/system/fonts/MILanPro_Normal.ttf", Typeface.create("sans-serif", Typeface.NORMAL));
         semibold = fromFile("/system/fonts/MILanPro_SemiBold.ttf", Typeface.create("sans-serif-medium", Typeface.NORMAL));
