@@ -297,12 +297,13 @@ Tested on a TCL Smart TV Pro (Google TV, Android 14, 2.3 GB of RAM). Every step 
 **Keep these on:**
 
 - `com.tcl.tvinput`: the HDMI inputs and the tuner.
+- `com.tcl.tv`: Live TV, which is also the screen that shows HDMI. Turning it off breaks every HDMI input, even if you never watch antenna or cable TV.
 - `com.tcl.suspension`: the input picker.
 - `com.tcl.inputmethod.international`: the TCL keyboard.
 - `com.tcl.providers.config`: other TCL apps read their settings from it.
 - `com.tcl.useragreement`: TCL's privacy switches.
 
-`com.tcl.tv` is Live TV, the channel guide and channel scanning. Turn it off only if you never watch antenna or cable TV.
+**HDMI stopped working?** If the TV sees the device but won't switch to it, `com.tcl.tv` is probably off. `com.tcl.tvinput` only provides the signal; `com.tcl.tv`'s player is the only screen that shows it. Bring it back with `adb shell cmd package install-existing com.tcl.tv` (or `adb shell pm enable com.tcl.tv` if it was turned off rather than removed).
 
 **Optional: the phone keyboard keeps popping up.** On this TV, Google TV's phone-remote service made its phone keyboard the TV's keyboard again after every restart. If that happens to you, first note which keyboard you have now:
 

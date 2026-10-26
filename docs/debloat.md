@@ -104,7 +104,7 @@ package to disable. Set it on the remote instead.
 | `com.dolby.android.audio.service` | audio processing, no sound without it on some TVs |
 | keyboards | `com.google.android.inputmethod.latin` (Gboard), `com.android.inputmethod.latin`, `com.tcl.inputmethod.international` |
 | setup apps | `com.google.android.tungsten.setupwraith`, `com.google.android.partnersetup`, `com.google.android.onetimeinitializer` |
-| TCL basics | `com.tcl.tvinput` (HDMI and tuner), `com.tcl.suspension` (input picker), `com.tcl.providers.config`, `com.tcl.useragreement` |
+| TCL basics | `com.tcl.tvinput` (HDMI and tuner), `com.tcl.tv` (Live TV, also the screen that shows HDMI), `com.tcl.suspension` (input picker), `com.tcl.providers.config`, `com.tcl.useragreement` |
 | Philips basics | `org.droidtv.` prefix: `homeintentresolver`, `GlobalKey`, `playtv`, `hdmiservice`, `channels`, `tvsystemui`, `tvpowermanagerservice`, `tv.tptvservice` ([TV Slim never-disable list](https://tvslim.app/packages/)); `lkb`, `xtv`, `settings`, `menudataapp`, `eum`, `aurora` ([tvdebloat DO NOT DISABLE block](https://tvdebloat.com/data/sources/philips-50pus8517.txt); removing `eum` or `aurora` leaves persistent `xtv` retrying) |
 | `com.google.android.apps.mediashell` | casting, if you cast |
 | anything flagged `PERSISTENT` | it will not stay off |
@@ -137,7 +137,6 @@ Turn these off only if you do not use the feature:
 | `com.google.android.marvin.talkback` | TalkBack screen reader |
 | `com.google.android.tv.remote.service` | remote control from your phone |
 | `com.google.android.tts` | text to speech |
-| `com.tcl.tv` | Live TV, antenna and cable channels |
 | `com.android.dreams.basic`, `com.google.android.apps.tv.dreamx` | the screensaver. Keep it on an OLED TV, it prevents burn-in |
 
 Vendors rename and add to these lists, so treat them as strong hints, not gospel. When in
