@@ -756,9 +756,14 @@ public class MainActivity extends Activity {
             showAddMenu(-1);
             return;
         } else if (SETTINGS.equals(key)) {
-            dropdown(tile(SETTINGS), SETTINGS_ITEMS, which -> {
-                if (which == 0) showWallpapers();
-                else if (which == 1) openBrightness();
+            // A box has no screen of its own to dim: its picture is the TV's, on the TV's remote. On NVIDIA
+            // Shield, Brightness also fell back to a Display & Sound page that's listed but missing there.
+            List<String> list = new ArrayList<>(Arrays.asList(SETTINGS_ITEMS));
+            if (isBox(this)) list.remove("Brightness");
+            final String[] items = list.toArray(new String[0]);
+            dropdown(tile(SETTINGS), items, which -> {
+                if ("Wallpaper".equals(items[which])) showWallpapers();
+                else if ("Brightness".equals(items[which])) openBrightness();
                 else openTvSettings();
             });
             return;
@@ -1404,6 +1409,20 @@ public class MainActivity extends Activity {
         for (TvInputInfo in : tim.getTvInputList()) if (countsAsInput(in)) out.add(in);
         Collections.sort(out, (a, b) -> a.getId().compareTo(b.getId()));
         return out;
+    }
+
+    // A TV has inputs of its own (HDMI, AV); a box that plugs into one, like NVIDIA Shield, Chromecast
+    // or a Mi Box, has none. Some TVs register their HDMI inputs a while after starting (#52), so with
+    // none yet the HDMI-CEC device type decides: 0 is a TV, 4 a playback device like a box.
+    static boolean isBox(Context c) {
+        TvInputManager tim = (TvInputManager) c.getSystemService(Context.TV_INPUT_SERVICE);
+        if (tim != null) for (TvInputInfo in : tim.getTvInputList()) if (in.isPassthroughInput()) return false;
+        String type = "";
+        try {
+            type = String.valueOf(Class.forName("android.os.SystemProperties")
+                    .getMethod("get", String.class).invoke(null, "ro.hdmi.device_type"));
+        } catch (Throwable ignored) {}
+        return !Arrays.asList(type.split(",")).contains("0");
     }
 
     private TvInputInfo inputById(String id) {
