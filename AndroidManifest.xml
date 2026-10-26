@@ -22,6 +22,8 @@
         <intent><action android:name="android.settings.SOUND_SETTINGS" /></intent>
         <intent><action android:name="android.settings.DISPLAY_SETTINGS" /></intent>
         <package android:name="com.tcl.settings" />
+        <!-- Some TCL Google TVs ship TCL's Picture and Sound panels inside TvSettings. -->
+        <package android:name="com.android.tv.settings" />
         <!-- Google TV's HDMI input player, so HDMI tiles can see when the TV sends HDMI to it. -->
         <package android:name="com.google.android.tv.inputplayer" />
         <!-- Google TV's own home screen, which HomeButton opens when Back is held. -->
