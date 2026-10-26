@@ -61,7 +61,7 @@ com.google.android.inputmethod.latin com.android.inputmethod.latin com.google.an
 com.tcl.inputmethod.international com.android.providers.userdictionary
 com.google.android.tungsten.setupwraith com.google.android.onetimeinitializer
 com.google.android.partnersetup com.android.provision com.android.tv.provision com.android.managedprovisioning
-com.tcl.suspension com.tcl.tvinput com.tcl.providers.config com.tcl.useragreement
+com.tcl.suspension com.tcl.tvinput com.tcl.tv com.tcl.providers.config com.tcl.useragreement
 com.tcl.settings com.tcl.tcl_bt_rcu_service com.google.android.apps.tv.launcherx"
 # https://tvslim.app/packages/ never-disable list: Home routing, remote, TV, HDMI, channels, UI, power and core TV service.
 NEVER="$NEVER org.droidtv.homeintentresolver org.droidtv.GlobalKey org.droidtv.playtv
@@ -77,7 +77,7 @@ com.google.android.tv.assistant com.google.android.marvin.talkback
 com.google.android.tv.remote.service com.google.android.tts
 com.google.android.syncadapters.contacts com.google.android.syncadapters.calendar
 com.ansub.tvhome com.google.android.webview com.tcl.android.webview
-com.tcl.tv com.tcl.micmanager
+com.tcl.micmanager
 com.android.dreams.basic com.google.android.apps.tv.dreamx"
 
 # Commonly preinstalled junk: ads, sponsored rows, unused vendor and Google apps.
@@ -162,7 +162,7 @@ com.tcl.ttvs	TCL analytics and Alexa hooks
 com.tcl.providers.config	TCL settings store
 com.tcl.settings	TCL settings
 com.tcl.tvinput	TV input framework
-com.tcl.tv	Live TV
+com.tcl.tv	Live TV and the HDMI screen
 com.tcl.tcl_bt_rcu_service	Bluetooth remote
 com.google.android.tvlauncher	Google TV home screen
 com.google.android.apps.tv.launcherx	Google TV home screen
