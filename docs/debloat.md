@@ -137,7 +137,6 @@ Turn these off only if you do not use the feature:
 | `com.google.android.marvin.talkback` | TalkBack screen reader |
 | `com.google.android.tv.remote.service` | remote control from your phone |
 | `com.google.android.tts` | text to speech |
-| `com.tcl.tv` | Live TV, antenna and cable channels |
 | `com.android.dreams.basic`, `com.google.android.apps.tv.dreamx` | the screensaver. Keep it on an OLED TV, it prevents burn-in |
 
 Vendors rename and add to these lists, so treat them as strong hints, not gospel. When in
