@@ -428,7 +428,13 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public boolean onKeyDown(int code, KeyEvent ev) {
+        return HomeButton.openAppKey(this, ev) || super.onKeyDown(code, ev);
+    }
+
+    @Override
     public boolean onKeyUp(int code, KeyEvent ev) {
+        if (HomeButton.openAppKey(this, ev)) return true;
         if (code == KeyEvent.KEYCODE_BACK) {
             boolean held = backHeld;
             backHeld = false;

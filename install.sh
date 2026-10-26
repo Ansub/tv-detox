@@ -130,6 +130,9 @@ sh_tv appops set com.ansub.tvhome WRITE_SETTINGS allow >/dev/null 2>&1 || true
 if [ "$(sh_tv getprop ro.build.version.sdk)" -ge 31 ]; then
   sh_tv pm grant com.ansub.tvhome android.permission.BLUETOOTH_CONNECT >/dev/null 2>&1 || true
 fi
+# TCL TVs only start an app's background parts with TCL's auto-start, so Home button stays off even
+# when it's turned on in Accessibility. Other TVs don't know the setting and ignore it.
+sh_tv appops set com.ansub.tvhome APP_AUTO_START allow >/dev/null 2>&1 || true
 
 # Known TV home screens that are safe to turn off.
 LAUNCHERS="com.google.android.tvlauncher com.google.android.apps.tv.launcherx com.google.android.leanbacklauncher

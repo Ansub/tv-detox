@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.SystemClock;
 import android.provider.Settings;
+import android.view.KeyEvent;
 import android.view.accessibility.AccessibilityEvent;
 
 // Opt-in (Settings > Accessibility > Home button): makes Home open this home screen on TVs where the
@@ -48,6 +49,61 @@ public class HomeButton extends AccessibilityService {
         try {
             startActivity(new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         } catch (Exception ignored) {}
+    }
+
+    // The settings (gear) button on Google TV remotes, TCL's among them, sends the Notification key, and
+    // only Google TV's home screen answers it. Once that home screen is off (GOOGLE_TV=1), the button
+    // opens this home screen's Settings screen instead, wherever you are; the app buttons open their
+    // apps. Every other key, and these on TVs where Google TV's home screen is still on, go on as usual.
+    // TCL remotes' app buttons send TCL's own key codes, which Google TV's home screen turns into the
+    // app. With it off, they're mapped here: Netflix, Prime Video and YouTube, as on a TCL Smart TV Pro
+    // (RC833 remote). A button for an app that isn't installed goes on as usual.
+    private static final int[] APP_KEYS = {4062, 4099, 4065};
+    private static final String[] APP_KEY_APPS = {"com.netflix.ninja", "com.amazon.amazonvideo.livingroom",
+            "com.google.android.youtube.tv"};
+
+    @Override
+    protected boolean onKeyEvent(KeyEvent event) {
+        Intent open = event.getKeyCode() == KeyEvent.KEYCODE_NOTIFICATION
+                ? new Intent(this, SettingsActivity.class) : appKeyIntent(this, event.getKeyCode());
+        if (open == null || !googleTvHomeOff(this) || !setupDone()) return false;
+        if (event.getAction() == KeyEvent.ACTION_UP) {
+            try {
+                startActivity(open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            } catch (Exception ignored) {}
+        }
+        return true;
+    }
+
+    // TCL lets its Netflix button past accessibility services, so this service never sees it. It still
+    // reaches the app in front, so this home screen opens the app itself (MainActivity.onKeyUp).
+    static boolean openAppKey(Context c, KeyEvent event) {
+        Intent open = appKeyIntent(c, event.getKeyCode());
+        if (open == null || !googleTvHomeOff(c)) return false;
+        if (event.getAction() == KeyEvent.ACTION_UP) {
+            try {
+                c.startActivity(open.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            } catch (Exception ignored) {}
+        }
+        return true;
+    }
+
+    private static Intent appKeyIntent(Context c, int code) {
+        for (int i = 0; i < APP_KEYS.length; i++) {
+            if (code != APP_KEYS[i]) continue;
+            Intent open = c.getPackageManager().getLeanbackLaunchIntentForPackage(APP_KEY_APPS[i]);
+            return open != null ? open : c.getPackageManager().getLaunchIntentForPackage(APP_KEY_APPS[i]);
+        }
+        return null;
+    }
+
+    // Installed but turned off: on a TV that never had it, the key may mean something else.
+    private static boolean googleTvHomeOff(Context c) {
+        try {
+            return !c.getPackageManager().getApplicationInfo(GOOGLE_TV_HOME.getPackageName(), 0).enabled;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     @Override

@@ -461,6 +461,8 @@ Some remote buttons are handled by the TV's own home screen or by apps the clean
 
 **The YouTube button on some Google TVs** (seen on Xiaomi and Vu): it goes to Google TV's own home screen, which `install.sh` turns off, so the button does nothing. Turning that home screen back on brings the button back, but your TV may then open Google TV's home screen again instead of this one. Until there's a safe fix, open YouTube from its tile on the home screen.
 
+**The settings (gear) button on Google TV remotes** (seen on TCL): it sends the Notification key, which only Google TV's own home screen answers, so with that home screen off it does nothing. Turn on **Settings > Accessibility > Home button** and the gear opens this home screen's Settings screen instead, in any app. The Netflix, YouTube and Prime Video buttons on TCL remotes send TCL's own key codes, which also only Google TV's home screen turned into apps; with **Home button** on, they open their apps again. The Netflix button only does this from the home screen, since TCL keeps that button away from accessibility services. It only does this while Google TV's home screen is off, and it leaves every other button alone.
+
 </details>
 
 <details>
