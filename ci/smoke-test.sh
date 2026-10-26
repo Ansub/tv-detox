@@ -56,6 +56,7 @@ echo "$x" | grep -q 'text="Screensaver &amp; sleep"' || fail "Settings screen ha
 echo "$x" | grep -q 'text="All Android settings"' || fail "Settings screen has no All Android settings"
 adb -s "$TV" shell input keyevent KEYCODE_BACK
 wait_home || fail "Back from the Settings screen didn't come home"
+adb -s "$TV" shell dumpsys package com.ansub.tvhome | grep -q 'com.ansub.tvhome/.StarfieldDream' || fail "the Starfield screensaver isn't registered"
 
 echo "== custom app list"
 # Use whatever TV app this device has (test images may have none).

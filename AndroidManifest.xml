@@ -69,6 +69,14 @@
             android:excludeFromRecents="true"
             android:screenOrientation="landscape"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode" />
+        <!-- Starfield, a screensaver that comes with the home screen. It only runs while it shows. -->
+        <service android:name=".StarfieldDream" android:label="Starfield" android:exported="true"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
         <!-- Opt-in: makes Home open this home screen where the TV's own has to stay on (Google TV). -->
         <service android:name=".HomeButton" android:label="Home button" android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">

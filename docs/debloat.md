@@ -92,12 +92,17 @@ package to disable. Set it on the remote instead.
 
 ![The Settings screen, on its Screensaver & sleep page](settings-screen.png)
 
+![Starfield, the screensaver that comes with the home screen](starfield.png)
+
 Turning off the screensaver you had, like Google TV's `dreamx` or Android TV's Ambient Mode
 (`com.google.android.backdrop`), leaves the TV with a different one or none. Pick what replaces
 it on the home screen: **Settings** tile, then **Screensaver & sleep**.
 
 - **Screensaver** lists every screensaver on the TV, plus Off. **Preview screensaver** shows it
   straight away.
+- **Starfield** comes with the home screen: stars drifting slowly towards you, with a small clock
+  that moves every minute. It only runs while it shows, so it costs nothing the rest of the time,
+  and it can replace Ambient Mode or Google TV's screensaver once they're off.
 - **Starts after** and **Sleeps after** set the two timers. Sleep can't be set before the
   screensaver starts, so the screensaver always gets its turn.
 - `install.sh` grants the two permissions these need, over adb. Without them the page only shows
