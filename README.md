@@ -327,6 +327,25 @@ adb shell ime set <the keyboard you noted>
 
 **The TCL logo at startup** is part of the TV's firmware, so it can't be turned off. On this TV, turning it off with the remote (not at the wall) let TCL's quick start wake it straight to the home screen, with no logo.
 
+**TCL Q651G (Google TV, Android 12).** Also tested on two TCL Q651G TVs (43" and 50", 1.8 GB of RAM) with `GOOGLE_TV=1 YES_SETUP=1` on port 5555. Both started normally after every restart, and free memory went from about 560 MB to about 840 MB. A few notes for these TVs:
+
+- **Keep `com.tcl.tv` on**, same as above. It's the only app that shows HDMI on these TVs too.
+- **Wi-Fi was forgotten.** On both TVs, the TV forgot its Wi-Fi network partway through `install.sh`, which also ended the adb connection. We don't know why. If it happens, pick the network on the TV, enter the password, reconnect with `adb connect <TV_IP>:5555` and run `install.sh` again. If your TV has an Ethernet port, a cable avoids this.
+- **Optional: Usage & diagnostics** (Settings > Privacy) is part of the setup app, so it won't open once that app is off. Only on these TVs, after `install.sh` turned the setup app off: connect on port 5555 (not Wireless debugging), then turn the setup app on for a moment. While it's on, don't press Home, because Home opens the setup app.
+
+  ```sh
+  adb shell pm enable com.google.android.tungsten.setupwraith
+  adb shell am start -a com.google.android.settings.USAGE_AND_DIAGNOSTICS_SETTING
+  # switch it off on the TV, press Back, then:
+  adb shell pm disable-user --user 0 com.google.android.tungsten.setupwraith
+  adb shell cmd role add-role-holder --user 0 android.app.role.HOME com.ansub.tvhome
+  adb shell cmd package set-home-activity com.ansub.tvhome/.MainActivity
+  ```
+
+- **The app buttons on the remote** (YouTube, Netflix and others) stopped working, even for apps that are still installed. TCL sends these buttons through one of its own apps first. We haven't confirmed which one. If you need them, try turning `com.tcl.partnercustomizer` back on, then `com.tcl.ttvs`, with `adb shell pm enable <package>`.
+- **No TCL keyboard.** `com.tcl.inputmethod.international` isn't on these TVs, so Gboard is the only keyboard: keep it on. Skip the optional keyboard step above, or set Gboard instead (find its name with `adb shell ime list -s`).
+- **Also turned off without trouble:** TCL TV+ (`com.tcl.tv.plus`, free channels with ads), Samba TV (`tv.samba.ssm.ui`, which recognises what's on screen for ads), `com.tcl.tv.tclhome_passive`, `com.tcl.smartlink.core` and `com.tcl.hotelmenu`. AirPlay (`com.tcl.airplay2`, `com.realtek.airplay2`) can be turned off too if you don't use it.
+
 </details>
 
 <details>
