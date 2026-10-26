@@ -115,7 +115,7 @@ public class SettingsActivity extends Activity {
 
         menu = new LinearLayout(this);
         menu.setOrientation(LinearLayout.VERTICAL);
-        for (int i = 0; i < CATEGORIES.length; i++) menu.addView(categoryRow(i), new LinearLayout.LayoutParams(-1, px(88)));
+        for (int i = 0; i < CATEGORIES.length; i++) menu.addView(categoryRow(i), new LinearLayout.LayoutParams(-1, -2));
         root.addView(menu, at(px(72), px(196), px(520), -2));
 
         GradientDrawable card = new GradientDrawable();
@@ -195,10 +195,12 @@ public class SettingsActivity extends Activity {
     private TextView categoryRow(final int i) {
         final TextView t = text(px(30), 0xD9FFFFFF, MainActivity.regular);
         t.setText(Strings.t(CATEGORIES[i]));
-        t.setSingleLine(true);
+        // Some languages need two lines here ("Todas as configurações do Android").
+        t.setMaxLines(2);
         t.setEllipsize(TextUtils.TruncateAt.END);
         t.setGravity(Gravity.CENTER_VERTICAL);
-        t.setPadding(px(24), 0, px(24), 0);
+        t.setMinHeight(px(88));
+        t.setPadding(px(24), px(14), px(24), px(14));
         LineIcon icon = new LineIcon(CATEGORY_ICONS[i]);
         icon.setBounds(0, 0, px(36), px(36));
         t.setCompoundDrawablesRelative(icon, null, null, null);
