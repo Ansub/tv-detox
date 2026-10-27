@@ -1445,17 +1445,26 @@ public class MainActivity extends Activity {
     }
 
     private String tvInputLabel(TvInputInfo in) {
-        CharSequence custom = in.loadCustomLabel(this);
-        if (custom != null && custom.length() > 0) return withoutDeviceType(custom.toString());
-        CharSequence label = in.loadLabel(this);
-        return label != null && label.length() > 0 ? withoutDeviceType(label.toString()) : "HDMI";
+        String custom = inputLabelOrNull(in.loadCustomLabel(this));
+        if (custom != null) return custom;
+        String label = inputLabelOrNull(in.loadLabel(this));
+        return label != null ? label : "HDMI";
+    }
+
+    private static String inputLabelOrNull(CharSequence raw) {
+        if (raw == null || raw.length() == 0) return null;
+        String label = withoutDeviceType(raw.toString());
+        return "Philips".equalsIgnoreCase(android.os.Build.MANUFACTURER)
+                && (label.isEmpty() || "null".equals(label)) ? null : label;
     }
 
     // Philips stores a name as "name&DEVICE_TYPE" (like "Computer&COMPUTER"), so show the name only.
+    // Missing Philips names/types can be the literal "null"; a missing name uses the next fallback.
     // Only on Philips TVs: elsewhere a name like "AUDIO&VIDEO" is the name itself.
     private static String withoutDeviceType(String label) {
         if (!"Philips".equalsIgnoreCase(android.os.Build.MANUFACTURER)) return label;
         int amp = label.lastIndexOf('&');
+        if (amp >= 0 && (label.endsWith("&") || label.endsWith("&null"))) return label.substring(0, amp).trim();
         return amp > 0 && label.substring(amp + 1).matches("[A-Z][A-Z0-9_]{2,}") ? label.substring(0, amp).trim() : label;
     }
 
