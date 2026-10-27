@@ -330,7 +330,7 @@ adb shell ime set <the keyboard you noted>
 **TCL Q651G (Google TV, Android 12).** Also tested on two TCL Q651G TVs (43" and 50", 1.8 GB of RAM) with `GOOGLE_TV=1 YES_SETUP=1` on port 5555. Both started normally after every restart, and free memory went from about 560 MB to about 840 MB. A few notes for these TVs:
 
 - **Keep `com.tcl.tv` on**, same as above. It's the only app that shows HDMI on these TVs too.
-- **Wi-Fi was forgotten.** On both TVs, the TV forgot its Wi-Fi network partway through `install.sh`, which also ended the adb connection. We don't know why. If it happens, pick the network on the TV, enter the password, reconnect with `adb connect <TV_IP>:5555` and run `install.sh` again. If your TV has an Ethernet port, a cable avoids this.
+- **Wi-Fi was forgotten.** On both TVs, the TV forgot its Wi-Fi network partway through `install.sh`, which also ended the adb connection. The likely cause: Android erases the networks an app saved when that app is turned off, and Google TV's setup app had saved it (see [rule 5](docs/debloat.md#5-never-turn-off-the-app-that-saved-your-wi-fi)). `install.sh` now checks this and leaves the setup app on. To get past it, forget the network on the TV, join it again, and run `install.sh` again. If your TV has an Ethernet port, a cable avoids this.
 - **Optional: Usage & diagnostics** (Settings > Privacy) is part of the setup app, so it won't open once that app is off. Only on these TVs, after `install.sh` turned the setup app off: connect on port 5555 (not Wireless debugging), then turn the setup app on for a moment. While it's on, don't press Home, because Home opens the setup app.
 
   ```sh
@@ -345,6 +345,14 @@ adb shell ime set <the keyboard you noted>
 - **The app buttons on the remote** (YouTube, Netflix and others) stopped working, even for apps that are still installed. TCL sends these buttons through one of its own apps first. We haven't confirmed which one. If you need them, try turning `com.tcl.partnercustomizer` back on, then `com.tcl.ttvs`, with `adb shell pm enable <package>`.
 - **No TCL keyboard.** `com.tcl.inputmethod.international` isn't on these TVs, so Gboard is the only keyboard: keep it on. Skip the optional keyboard step above, or set Gboard instead (find its name with `adb shell ime list -s`).
 - **Also turned off without trouble:** TCL TV+ (`com.tcl.tv.plus`, free channels with ads), Samba TV (`tv.samba.ssm.ui`, which recognises what's on screen for ads), `com.tcl.tv.tclhome_passive`, `com.tcl.smartlink.core` and `com.tcl.hotelmenu`. AirPlay (`com.tcl.airplay2`, `com.realtek.airplay2`) can be turned off too if you don't use it.
+
+**TCL 32S4K (Google TV, Android 14, MediaTek MT5867, 954 MB of RAM).** Tested with `GOOGLE_TV=1 YES_SETUP=1` on port 5555, with a restart after every batch. It started normally each time. Measured 4 minutes after a restart, compressed swap in use went from 216 MB to 132 MB and free memory from 380 MB to 419 MB, and the home screen went from 84 MB to 25 MB. Storage went from 1.41 GB to 1.95 GB free. The swap is what you feel on a TV this small: its storage writes at under 10 MB/s.
+
+- **This TV is MediaTek inside, not TCL's usual platform.** There's no `com.tcl.tv` or `com.tcl.tvinput`. HDMI goes through `com.mediatek.wwtv.tvcenter` and `com.mediatek.tvinput`, and the remote's keys through `com.mediatek.tv.service` (check with `adb shell dumpsys window policy`). Keep all three on.
+- **The setup app owned the Wi-Fi.** All saved networks had `cname=com.google.android.tungsten.setupwraith`. We forgot the network on the TV and joined it again before `install.sh`, and Wi-Fi then survived the setup app going off.
+- **Turned off without trouble:** TCL's analytics (`com.tcl.ttvs`, about 26 MB), `com.tcl.partnercustomizer`, `com.tcl.keyhelp`, `com.tcl.messagebox`, `com.tcl.logkit`, `com.tcl.browser`, two store demos (`fusion.android.tv.demo`, `com.mediatek.MtkDemo`) and Google's partner app installer (`android.autoinstalls.config.google.gtvpai`). Every remote button still worked, because on this TV they don't go through TCL's apps.
+- **Also off, because the owner didn't use them:** voice search (`com.google.android.katniss`, about 54 MB), casting, the phone remote and Google TV's screensaver. Each one is worth it on 1 GB of RAM if you can do without the feature.
+- Animations were already off, and the main apps were already compiled (`pm art dump <package>`), so neither helps here.
 
 </details>
 
