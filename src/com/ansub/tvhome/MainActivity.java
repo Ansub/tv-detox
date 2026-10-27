@@ -157,6 +157,7 @@ public class MainActivity extends Activity {
     private static Typeface regular, semibold;
 
     private FrameLayout root; // the page, inside a vertical scroller
+    private ScrollView scroller;
     private int tileW, tileH, gridTop; // app grid geometry, set by buildTiles
     private final List<View> tiles = new ArrayList<>();
     private final Map<View, ValueAnimator> lifts = new WeakHashMap<>(); // a running focus fade per tile
@@ -202,7 +203,14 @@ public class MainActivity extends Activity {
         scale = getResources().getDisplayMetrics().widthPixels / 1920f;
         showWallpaper(wallpaper());
 
-        ScrollView scroller = new ScrollView(this);
+        // ScrollView only brings a focused tile to the very edge, and the focus lift then grows it past
+        // the screen; keepInView scrolls instead, smoothly and with a margin, so a row below the fold
+        // (the inputs' second row, or a third row of apps) shows in full.
+        scroller = new ScrollView(this) {
+            @Override protected int computeScrollDeltaToGetChildRectOnScreen(android.graphics.Rect rect) {
+                return 0;
+            }
+        };
         scroller.setFillViewport(true);
         scroller.setVerticalScrollBarEnabled(false);
         scroller.setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -236,6 +244,10 @@ public class MainActivity extends Activity {
         moveHint.setVisibility(View.GONE);
         root.addView(moveHint, at(px(MARGIN), px(ROW1_TOP - 64), -2, -2));
 
+        scroller.getViewTreeObserver().addOnGlobalFocusChangeListener((was, now) -> {
+            if (now != null && now.getParent() instanceof View && root.indexOfChild((View) now.getParent()) >= 0)
+                scroller.post(() -> keepInView(now));
+        });
         setContentView(scroller);
 
         IntentFilter f = new IntentFilter();
@@ -474,6 +486,17 @@ public class MainActivity extends Activity {
         g.setGradientCenter(cx, cy);
         g.setGradientRadius(r);
         return g;
+    }
+
+    // The whole tile and a margin in view; the top row of apps (and the icons by the clock) also
+    // brings the clock back into view.
+    private void keepInView(View tile) {
+        View wrap = (View) tile.getParent();
+        int pad = px(MARGIN);
+        int top = wrap.getTop() - pad, bottom = wrap.getBottom() + pad, y = scroller.getScrollY(), h = scroller.getHeight();
+        if (wrap.getTop() <= gridTop) scroller.smoothScrollTo(0, 0);
+        else if (bottom > y + h) scroller.smoothScrollTo(0, bottom - h);
+        else if (top < y) scroller.smoothScrollTo(0, Math.max(0, top));
     }
 
     private void buildTiles() {
