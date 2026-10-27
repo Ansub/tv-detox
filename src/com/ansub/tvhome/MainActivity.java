@@ -1413,16 +1413,23 @@ public class MainActivity extends Activity {
 
     // A TV has inputs of its own (HDMI, AV); a box that plugs into one, like NVIDIA Shield, Chromecast
     // or a Mi Box, has none. Some TVs register their HDMI inputs a while after starting (#52), so with
-    // none yet the HDMI-CEC device type decides: 0 is a TV, 4 a playback device like a box.
+    // none yet it's a box only if HDMI-CEC says it's a playback device and not a TV. When unsure, it's
+    // a TV, so TVs keep their menu.
     static boolean isBox(Context c) {
         TvInputManager tim = (TvInputManager) c.getSystemService(Context.TV_INPUT_SERVICE);
         if (tim != null) for (TvInputInfo in : tim.getTvInputList()) if (in.isPassthroughInput()) return false;
-        String type = "";
+        List<String> types = cecTypes("ro.hdmi.device_type"), named = cecTypes("ro.hdmi.cec_device_types");
+        if (types.contains("0") || named.contains("tv")) return false;
+        return types.contains("4") || named.contains("playback_device");
+    }
+
+    private static List<String> cecTypes(String prop) {
         try {
-            type = String.valueOf(Class.forName("android.os.SystemProperties")
-                    .getMethod("get", String.class).invoke(null, "ro.hdmi.device_type"));
+            String v = String.valueOf(Class.forName("android.os.SystemProperties")
+                    .getMethod("get", String.class).invoke(null, prop)).trim();
+            if (!v.isEmpty()) return Arrays.asList(v.split("\\s*,\\s*"));
         } catch (Throwable ignored) {}
-        return !Arrays.asList(type.split(",")).contains("0");
+        return Collections.emptyList();
     }
 
     private TvInputInfo inputById(String id) {
