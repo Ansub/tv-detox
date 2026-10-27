@@ -787,7 +787,16 @@ public class MainActivity extends Activity {
             showAddMenu(-1);
             return;
         } else if (SETTINGS.equals(key)) {
-            startActivity(new Intent(this, SettingsActivity.class));
+            // A box has no screen of its own to dim: its picture is the TV's, on the TV's remote. On NVIDIA
+            // Shield, Brightness also fell back to a Display & Sound page that's listed but missing there.
+            List<String> list = new ArrayList<>(Arrays.asList(SETTINGS_ITEMS));
+            if (isBox(this)) list.remove("Brightness");
+            final String[] items = list.toArray(new String[0]);
+            dropdown(tile(SETTINGS), items, which -> {
+                if ("Wallpaper".equals(items[which])) showWallpapers();
+                else if ("Brightness".equals(items[which])) openBrightness();
+                else openTvSettings();
+            });
             return;
         } else if (isInput(key)) {
             openInput(key);
@@ -1434,18 +1443,24 @@ public class MainActivity extends Activity {
     }
 
     // A TV has inputs of its own (HDMI, AV); a box that plugs into one, like NVIDIA Shield, Chromecast
-    // or a Mi Box, has none. Only a TV has a screen to dim and speakers of its own.
-    // Some TVs register their HDMI inputs a while after starting (#52), so with none yet the HDMI-CEC
-    // device type decides: 0 is a TV, 4 a playback device like a box.
+    // or a Mi Box, has none. Some TVs register their HDMI inputs a while after starting (#52), so with
+    // none yet it's a box only if HDMI-CEC says it's a playback device and not a TV. When unsure, it's
+    // a TV, so TVs keep their menu.
     static boolean isBox(Context c) {
         TvInputManager tim = (TvInputManager) c.getSystemService(Context.TV_INPUT_SERVICE);
         if (tim != null) for (TvInputInfo in : tim.getTvInputList()) if (in.isPassthroughInput()) return false;
-        String type = "";
+        List<String> types = cecTypes("ro.hdmi.device_type"), named = cecTypes("ro.hdmi.cec_device_types");
+        if (types.contains("0") || named.contains("tv")) return false;
+        return types.contains("4") || named.contains("playback_device");
+    }
+
+    private static List<String> cecTypes(String prop) {
         try {
-            type = String.valueOf(Class.forName("android.os.SystemProperties")
-                    .getMethod("get", String.class).invoke(null, "ro.hdmi.device_type"));
+            String v = String.valueOf(Class.forName("android.os.SystemProperties")
+                    .getMethod("get", String.class).invoke(null, prop)).trim();
+            if (!v.isEmpty()) return Arrays.asList(v.split("\\s*,\\s*"));
         } catch (Throwable ignored) {}
-        return !Arrays.asList(type.split(",")).contains("0");
+        return Collections.emptyList();
     }
 
     private TvInputInfo inputById(String id) {
