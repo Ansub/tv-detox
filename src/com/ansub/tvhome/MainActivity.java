@@ -1,8 +1,5 @@
 package com.ansub.tvhome;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -33,6 +30,7 @@ import android.net.NetworkRequest;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -46,8 +44,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.view.animation.DecelerateInterpolator;
-import android.view.animation.Interpolator;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -58,7 +54,6 @@ import android.widget.ScrollView;
 import android.widget.TextClock;
 import android.widget.TextView;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -116,50 +111,46 @@ public class MainActivity extends Activity {
     private static final String TCL_SHOW_WINDOW = "com.tcl.settings.SHOW_WINDOW";
 
     // Layout is designed at 1920x1080 and scaled to the TV's real UI size by px().
-    private static final int MARGIN = 96, GAP = 36, RADIUS = 26;
+    private static final int MARGIN = 96, GAP = 36, RADIUS = 23;
     // The focus lift: the tile grows, rises, brightens and rounds off a little, then settles.
     // Long enough to read as motion, short enough that a run of d-pad presses never feels behind.
     private static final int FOCUS_MS = 180, RADIUS_UP = 10;
-    private static final Interpolator FOCUS_EASE = new DecelerateInterpolator(1.8f);
+    private static final float FOCUS_SCALE = 1.14f; // the focused tile grows like on Apple TV
     private static final int ROW1_TOP = 604, ROW_STEP = 224;
     private static final int GRID_MIN_TOP = 400; // more rows push the grid up, but not into the clock
     private static final int ICON_TOP = 76, ICON_BUTTON = 72, ICON_SIZE = 40, ICON_GAP = 12; // level with the date
 
     // The Settings tile opens a small menu: the home screen's own settings, then the TV's.
-    private static final String[] SETTINGS_ITEMS = {"Wallpaper", "Brightness", "TV settings"};
+    private static final String[] SETTINGS_ITEMS = {"Brightness", "TV settings"};
     // Android TV 11 and later (Google TV too) has no Display page, but its "Display & Sound" page holds Picture.
     private static final String[] TV_DISPLAY_SOUND = {"com.android.tv.settings",
             "com.android.tv.settings.device.displaysound.DisplaySoundActivity"};
-    // Wallpapers, saved by name: a gradient top to bottom, then a glow from the top left and one from
-    // the bottom right. Dark ones first, then bright ones that get darker towards the bottom, so the
-    // white labels stay easy to read. Only colours, no images, so every one costs the same as Dusk,
-    // the default.
-    private static final String[] WALLPAPER_NAMES = {"Dusk", "Midnight", "Plum", "Forest", "Graphite", "Ocean", "Ember",
-            "Sunset", "Lagoon", "Aurora", "Coral", "Iris", "Meadow", "Gold"};
-    private static final int[][] WALLPAPERS = {
-        {0xFF15100F, 0xFF0A0809, 0xFF050405, 0x36FF8048, 0x2EAA3C8C},
-        {0xFF0E1220, 0xFF080A13, 0xFF040509, 0x384A6CFF, 0x2E5A3CC8},
-        {0xFF170E19, 0xFF0C070D, 0xFF050306, 0x38C050B4, 0x2E6440D2},
-        {0xFF0C150F, 0xFF070C09, 0xFF030604, 0x3050B478, 0x28289682},
-        {0xFF151617, 0xFF0B0C0D, 0xFF050506, 0x1CFFFFFF, 0x16A0B4C8},
-        {0xFF0A1517, 0xFF060C0E, 0xFF030607, 0x3426B4C8, 0x2E2A64C0},
-        {0xFF190D08, 0xFF0D0605, 0xFF060303, 0x40FF5A24, 0x32C8283C},
-        {0xFF8C3A5E, 0xFF5E2348, 0xFF22101E, 0xA0FF8A4C, 0x80E0457A},
-        {0xFF14588E, 0xFF15366E, 0xFF0A1632, 0x9030C8E0, 0x807A4CE0},
-        {0xFF0F4048, 0xFF0F2E3A, 0xFF08141C, 0x9038E0A0, 0x90A050F0},
-        {0xFFC0604E, 0xFF8A3456, 0xFF2E1230, 0x90FFB070, 0x70E04090},
-        {0xFF5A3CAE, 0xFF3A2A84, 0xFF16123A, 0x90C080FF, 0x804A7CFF},
-        {0xFF2E6E4C, 0xFF1C4A40, 0xFF0A201E, 0x90A8E070, 0x6030A8A8},
-        {0xFFB07624, 0xFF86401E, 0xFF2A1410, 0x90FFD060, 0x70FF5040},
-    };
     private float scale = 1f;
+    private static final long PHOTO_FADE_MS = 1_500;
+    private ImageView photoBack, photoFront;
+    private Motion photoFade;
+    private Photos photos;
+    private LockScreen lock;
+    private View home; // the apps page
+    private GlassPanel glass; // frosted glass behind the apps
+    private TextView greeting;
+    private TextView homeAvatar;
+    private final LockState lockState = new LockState(LockState.IDLE_MS);
+    private Motion slide; // the lock screen sliding away or back
+    private Widgets widgets; // scores under the lock screen clock
+    private ScoresFeed feed;
+    private FrameLayout stage; // photo, glass, apps, lock screen, and the profile picker on top
+    private View pickerView; // "Who's watching?" while it's open
+    private boolean homeRequested; // Home was pressed (or HomeButton brought us back): show the apps
+    private static final long SLIDE_MS = 500, IDLE_CHECK_MS = 5_000;
+    private final KeyGate keyGate = new KeyGate(); // keeps lock-screen keys away from the apps
 
-    private static Typeface regular, semibold;
+    private static Typeface regular, medium, semibold, bold;
 
     private FrameLayout root; // the page, inside a vertical scroller
     private int tileW, tileH, gridTop; // app grid geometry, set by buildTiles
     private final List<View> tiles = new ArrayList<>();
-    private final Map<View, ValueAnimator> lifts = new WeakHashMap<>(); // a running focus fade per tile
+    private final Map<View, Motion> lifts = new WeakHashMap<>(); // a running focus fade per tile or caption
     private boolean dirty = true;
     private java.util.Locale shownLocale; // the TV's language (and region) when the page was built
     private String focusedKey;
@@ -198,9 +189,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         saveConfig(getIntent());
-        loadFonts();
+        loadFonts(this);
         scale = getResources().getDisplayMetrics().widthPixels / 1920f;
-        showWallpaper(wallpaper());
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
 
         ScrollView scroller = new ScrollView(this);
         scroller.setFillViewport(true);
@@ -211,32 +202,62 @@ public class MainActivity extends Activity {
         root.setClipChildren(false);
         scroller.addView(root, new FrameLayout.LayoutParams(-1, -2));
 
-        LinearLayout clock = new LinearLayout(this);
-        clock.setOrientation(LinearLayout.VERTICAL);
         shownLocale = java.util.Locale.getDefault();
-        String day = Strings.datePattern();
-        TextClock date = clock(day, day, px(30), 0xA8FFFFFF, regular);
         // The clock follows the TV unless --es clock 12 or 24 says otherwise.
         String clockPref = prefs().getString(PREF_CLOCK, null);
-        TextClock time = clock("24".equals(clockPref) ? "H:mm" : "h:mm", "12".equals(clockPref) ? "h:mm" : "H:mm",
-                px(176), Color.WHITE, semibold);
-        time.setLetterSpacing(-0.028f);
+        String f12 = "24".equals(clockPref) ? "H:mm" : "h:mm", f24 = "12".equals(clockPref) ? "h:mm" : "H:mm";
+        // Apple TV's top bar: a greeting on the left, a small clock and the profile picture on the right.
+        greeting = text(px(42), Color.WHITE, bold);
+        greeting.setShadowLayer(px(16), 0, px(2), 0x66000000);
+        root.addView(greeting, at(px(77), px(52), -2, -2));
+        TextClock time = clock(f12, f24, px(36), Color.WHITE, semibold);
         time.setFontFeatureSettings("tnum");
-        time.setIncludeFontPadding(false);
-        // Wrap, not the default match_parent: the column must be as wide as the date, not just the time,
-        // or "0:00" to "9:59" (one digit less) cuts a long date off.
-        clock.addView(date, new LinearLayout.LayoutParams(-2, -2));
-        LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-2, -2);
-        tp.topMargin = px(-20); // pull the big digits up under the date
-        clock.addView(time, tp);
-        root.addView(clock, at(px(MARGIN), px(92), -2, -2));
+        time.setShadowLayer(px(16), 0, px(2), 0x66000000);
+        FrameLayout.LayoutParams tp = new FrameLayout.LayoutParams(-2, -2, Gravity.TOP | Gravity.END);
+        tp.topMargin = px(58);
+        tp.rightMargin = px(151);
+        root.addView(time, tp);
+        homeAvatar = LockScreen.avatar(this, scale, bold);
+        // Up from the top row of apps reaches the profile picture; OK on it opens "Who's watching?".
+        homeAvatar.setId(View.generateViewId());
+        homeAvatar.setFocusable(true);
+        homeAvatar.setOnClickListener(v -> openPicker());
+        homeAvatar.setOnFocusChangeListener((v, has) -> {
+            final float from = v.getScaleX(), to = has ? 1.15f : 1f;
+            Motion.run(FOCUS_MS, t -> { v.setScaleX(from + (to - from) * t); v.setScaleY(from + (to - from) * t); }, null);
+        });
+        root.addView(homeAvatar, LockScreen.avatarPosition(scale));
 
         moveHint = text(px(24), 0xA8FFFFFF, regular);
         moveHint.setText(Strings.t("Use the arrows to move it, then press OK"));
         moveHint.setVisibility(View.GONE);
         root.addView(moveHint, at(px(MARGIN), px(ROW1_TOP - 64), -2, -2));
 
-        setContentView(scroller);
+        // Back to front: the photo (and the next one fading in over it), the apps, the lock screen.
+        stage = new FrameLayout(this);
+        photoBack = photoView();
+        photoFront = photoView();
+        stage.addView(photoBack, new FrameLayout.LayoutParams(-1, -1));
+        stage.addView(photoFront, new FrameLayout.LayoutParams(-1, -1));
+        glass = new GlassPanel(this);
+        stage.addView(glass, new FrameLayout.LayoutParams(-1, -1));
+        stage.addView(scroller, new FrameLayout.LayoutParams(-1, -1));
+        home = scroller;
+        lock = new LockScreen(this, scale, semibold, bold);
+        lock.setClockFormat(f12, f24);
+        stage.addView(lock.view(), new FrameLayout.LayoutParams(-1, -1));
+        widgets = new Widgets(this, scale, medium, semibold, bold);
+        lock.widgetSlot().addView(widgets.view());
+        feed = new ScoresFeed(this, new ScoresFeed.Listener() {
+            @Override public void onScores(List<Scores.Game> live, List<Scores.Game> upcoming, List<String> lines) {
+                widgets.update(live, upcoming, lines);
+            }
+            @Override public void onOffline() { widgets.hide(); }
+        });
+        showProfile();
+        showScreen();
+        setContentView(stage);
+        photos = new Photos(this, getResources().getDisplayMetrics().widthPixels, getResources().getDisplayMetrics().heightPixels);
 
         IntentFilter f = new IntentFilter();
         f.addAction(Intent.ACTION_PACKAGE_ADDED);
@@ -251,11 +272,21 @@ public class MainActivity extends Activity {
             if (android.os.Build.VERSION.SDK_INT >= 24) cm.registerDefaultNetworkCallback(networkChanged);
             else cm.registerNetworkCallback(new NetworkRequest.Builder().build(), networkChanged);
         } catch (Exception ignored) {}
+
+        // The projector going to sleep: it wakes up on the lock screen, like a phone.
+        IntentFilter off = new IntentFilter(Intent.ACTION_SCREEN_OFF);
+        if (android.os.Build.VERSION.SDK_INT >= 33) registerReceiver(screenOff, off, Context.RECEIVER_NOT_EXPORTED);
+        else registerReceiver(screenOff, off);
     }
+
+    private final BroadcastReceiver screenOff = new BroadcastReceiver() {
+        @Override public void onReceive(Context c, Intent i) { lockState.woke(); }
+    };
 
     @Override
     protected void onDestroy() {
         unregisterReceiver(packagesChanged);
+        unregisterReceiver(screenOff);
         ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         if (cm != null) try { cm.unregisterNetworkCallback(networkChanged); } catch (Exception ignored) {}
         super.onDestroy();
@@ -266,10 +297,15 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         // A clock change needs the whole page rebuilt; a new app list only needs the tiles.
-        boolean clock = intent != null && intent.hasExtra("clock");
+        boolean clock = intent != null && (intent.hasExtra("clock") || intent.hasExtra("name"));
+        // A plain start (Home, or HomeButton bringing this back) opens the apps; settings extras don't.
+        Bundle extras = intent == null ? null : intent.getExtras();
+        if (extras == null || extras.isEmpty()) homeRequested = true;
         if (saveConfig(intent)) {
             if (clock) recreate();
             else buildTiles();
+            if (intent.hasExtra("photo_ms") && photos != null) photos.start(this::onPhoto);
+            if (intent.hasExtra("scores_base") && feed != null) { feed.stop(); feed.start(); }
         }
     }
 
@@ -282,7 +318,11 @@ public class MainActivity extends Activity {
         String quick = intent == null ? null : intent.getStringExtra("quick");
         String clock = intent == null ? null : intent.getStringExtra("clock");
         String fake = intent == null ? null : intent.getStringExtra("fakeinputs");
-        if (apps == null && quick == null && clock == null && fake == null) return false;
+        String name = intent == null ? null : intent.getStringExtra("name");
+        String scoresBase = intent == null ? null : intent.getStringExtra("scores_base");
+        boolean photoMs = intent != null && intent.hasExtra("photo_ms");
+        if (apps == null && quick == null && clock == null && fake == null && name == null && !photoMs
+                && scoresBase == null) return false;
         SharedPreferences prefs = getSharedPreferences(PREFS, 0);
         String stamp = intent.getStringExtra("stamp");
         if (stamp != null && stamp.equals(prefs.getString("stamp", null))) return false;
@@ -316,6 +356,19 @@ public class MainActivity extends Activity {
                     if (it.next().startsWith(FAKE_INPUT_PKG + "/")) it.remove();
                 e.putString(PREF_HIDDEN_INPUTS, android.text.TextUtils.join("\n", new TreeSet<>(hidden)));
             } else e.remove(PREF_FAKE_INPUTS);
+        }
+        // The owner's name for the greeting and profile picture: --es name Alex
+        if (name != null && !name.trim().isEmpty()) e.putString("name", name.trim());
+        // How often the photo changes, to try it out: --el photo_ms 20000 (0 goes back to 15 minutes).
+        if (photoMs) {
+            long ms = intent.getLongExtra("photo_ms", 0);
+            if (ms > 0) e.putLong("photo_ms", ms); else e.remove("photo_ms");
+        }
+        // Where scores come from, to try out an unreachable server: --es scores_base https://invalid.invalid/
+        // (--es scores_base default goes back to ESPN).
+        if (scoresBase != null) {
+            if (scoresBase.trim().isEmpty() || scoresBase.trim().equals("default")) e.remove("scores_base");
+            else e.putString("scores_base", scoresBase.trim());
         }
         e.apply();
         dirty = true;
@@ -355,6 +408,20 @@ public class MainActivity extends Activity {
         View f = getCurrentFocus();
         if (f == null && !tiles.isEmpty()) tiles.get(0).requestFocus();
         HomeButton.onHomeResumed(this); // back on this home screen: Home comes here again
+        photos.start(this::onPhoto);
+        // Woken up: the lock screen. Home pressed in an app: the apps. Otherwise as it was left.
+        if (lockState.consumeWake()) {
+            lockState.show(LockState.Screen.LOCK, SystemClock.uptimeMillis());
+            showScreen();
+        } else if (homeRequested) {
+            lockState.show(LockState.Screen.HOME, SystemClock.uptimeMillis());
+            showScreen();
+        }
+        homeRequested = false;
+        showProfile();
+        root.removeCallbacks(idleCheck);
+        root.postDelayed(idleCheck, IDLE_CHECK_MS);
+        applyProfile();
         // Only counted as opened once it has stayed up a moment, so a crash right after opening still
         // counts as a failed launch.
         getWindow().getDecorView().postDelayed(homeOk, 1500);
@@ -368,6 +435,143 @@ public class MainActivity extends Activity {
         // Left normally (an app or Settings opened), so it didn't crash.
         getWindow().getDecorView().removeCallbacks(homeOk);
         HomeButton.onHomeOk(this);
+        photos.stop();
+        root.removeCallbacks(idleCheck);
+        closePicker(); // it shouldn't be waiting on top when the projector wakes up
+        // No network while an app is in front.
+        feed.stop();
+        widgets.pause();
+    }
+
+    // Two minutes on the apps without a key: back to the lock screen. Not while a menu is open.
+    private final Runnable idleCheck = new Runnable() {
+        @Override public void run() {
+            if (hasWindowFocus() && movingKey == null && pickerView == null && lockState.idleExpired(SystemClock.uptimeMillis())
+                    && lockState.lock()) slide();
+            root.postDelayed(this, IDLE_CHECK_MS);
+        }
+    };
+
+    // The profile's name in the greeting (none for Guest) and on the profile picture.
+    private void showProfile() {
+        boolean owner = Profiles.isOwner(this);
+        String name = Profiles.name(this);
+        // No name set yet: just "Good evening".
+        greeting.setText(Greeting.of(java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY),
+                owner && Profiles.hasName(this) ? name : null));
+        lock.setInitial(Profiles.initial(name));
+        lock.setGuest(!owner);
+        homeAvatar.setText(Profiles.initial(name));
+        LockScreen.tint(homeAvatar, !owner);
+    }
+
+    // Scores are the owner's: Guest gets the same lock screen without them, and nothing is fetched.
+    private void applyProfile() {
+        showProfile();
+        if (Profiles.isOwner(this)) {
+            feed.start();
+            widgets.resume();
+        } else {
+            feed.stop();
+            widgets.hide();
+        }
+    }
+
+    private void openPicker() {
+        if (pickerView != null) return;
+        pickerView = Profiles.picker(this, scale, semibold, bold, guest -> {
+            if (guest ? Profiles.enterGuest(this) : Profiles.backToOwner(this)) applyProfile();
+            closePicker();
+        });
+        stage.addView(pickerView, new FrameLayout.LayoutParams(-1, -1));
+    }
+
+    private void closePicker() {
+        if (pickerView == null) return;
+        stage.removeView(pickerView);
+        pickerView = null;
+        homeAvatar.requestFocus();
+    }
+
+    private ImageView photoView() {
+        ImageView v = new ImageView(this);
+        v.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        return v;
+    }
+
+    // A new photo fades in over the one showing; the very first one just appears.
+    private void onPhoto(Bitmap full, Bitmap blurred) {
+        glass.setPhoto(blurred);
+        if (photoFade != null) photoFade.cancel();
+        if (photoBack.getDrawable() == null) {
+            photoBack.setImageBitmap(full);
+            return;
+        }
+        photoFront.setImageBitmap(full);
+        photoFade = Motion.run(PHOTO_FADE_MS, photoFront::setAlpha, () -> {
+            photoBack.setImageBitmap(full);
+            photoFront.setImageDrawable(null);
+            photoFront.setAlpha(0f);
+            photoFade = null;
+        });
+    }
+
+    // Puts the page in the state lockState says, at once (no slide).
+    private void showScreen() {
+        closePicker();
+        if (slide != null) slide.cancel();
+        slide = null;
+        setSlide(lockState.screen() == LockState.Screen.LOCK ? 0f : 1f);
+        if (lockState.screen() == LockState.Screen.HOME) focusFirstIfNone();
+    }
+
+    // Slides to the state lockState is now in: the lock screen fades up and away while the apps and
+    // their glass rise into place, or the other way round.
+    private void slide() {
+        if (slide != null) slide.cancel();
+        final boolean opening = lockState.screen() == LockState.Screen.HOME;
+        final float from = opening ? 0f : 1f, to = opening ? 1f : 0f;
+        if (opening) focusFirstIfNone();
+        slide = Motion.run(SLIDE_MS, t -> setSlide(from + (to - from) * t), () -> {
+            slide = null;
+            lockState.slideDone();
+        });
+    }
+
+    // 0 = lock screen, 1 = apps.
+    private void setSlide(float p) {
+        View l = lock.view();
+        l.setAlpha(1f - p);
+        l.setTranslationY(-px(60) * p);
+        l.setVisibility(p >= 1f ? View.GONE : View.VISIBLE);
+        for (View v : new View[] {home, glass}) {
+            v.setAlpha(p);
+            v.setTranslationY(px(140) * (1f - p));
+            v.setVisibility(p <= 0f ? View.INVISIBLE : View.VISIBLE);
+        }
+    }
+
+    private void focusFirstIfNone() {
+        View f = getCurrentFocus();
+        if ((f == null || !tiles.contains(f) && !f.isFocusable()) && !tiles.isEmpty()) tiles.get(0).requestFocus();
+    }
+
+    // On the lock screen, OK or any arrow opens the apps. Back is left alone so holding it still
+    // opens Google TV's home screen.
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent ev) {
+        boolean down = ev.getAction() == KeyEvent.ACTION_DOWN;
+        if (down) lockState.touched(SystemClock.uptimeMillis());
+        // On the lock screen (or mid-slide) arrows, OK and Menu never reach the apps underneath.
+        switch (keyGate.on(ev.getKeyCode(), down, lockState.screen() == LockState.Screen.LOCK, lockState.busy())) {
+            case OPEN:
+                if (lockState.open(SystemClock.uptimeMillis())) slide();
+                return true;
+            case CONSUME:
+                return true;
+            default:
+                return super.dispatchKeyEvent(ev);
+        }
     }
 
     // Back from a menu or a window on top (like the uninstall prompt): catch up on apps that changed.
@@ -394,7 +598,14 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    public void onBackPressed() { /* home screen: nothing to go back to */ }
+    public void onBackPressed() {
+        if (pickerView != null) {
+            closePicker();
+            return;
+        }
+        // Back on the apps goes back to the lock screen; on the lock screen it does nothing.
+        if (lockState.lock()) slide();
+    }
 
     // Holding Back opens Google TV's own home screen, where it stays on (see HomeButton). Spotted on a
     // key repeat, or when Back is let go if the remote sends none.
@@ -420,62 +631,6 @@ public class MainActivity extends Activity {
         return super.onKeyUp(code, ev);
     }
 
-    // Static gradient, drawn once by the window: no extra view, no animation.
-    private Drawable background(int[] c) {
-        GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
-                new int[] {c[0], c[1], c[2]});
-        GradientDrawable top = radial(c[3], 0.08f, -0.12f, px(1250));
-        GradientDrawable bottom = radial(c[4], 1.0f, 1.1f, px(1000));
-        for (GradientDrawable g : new GradientDrawable[] {base, top, bottom}) g.setDither(true);
-        return new LayerDrawable(new Drawable[] {base, top, bottom});
-    }
-
-    // The saved wallpaper, as an index into WALLPAPERS (Dusk if none is saved).
-    private int wallpaper() {
-        String saved = getSharedPreferences(PREFS, 0).getString("wallpaper", null);
-        return Math.max(0, Arrays.asList(WALLPAPER_NAMES).indexOf(saved));
-    }
-
-    private void showWallpaper(int i) {
-        getWindow().setBackgroundDrawable(background(WALLPAPERS[i]));
-    }
-
-    // The wallpapers, each with a small dot of its colours. Moving through the list shows each one
-    // behind the panel; OK keeps it, Back goes back to the one before.
-    private void showWallpapers() {
-        final int size = px(40);
-        panel(Strings.t("Wallpaper"), Arrays.asList(WALLPAPER_NAMES), pos -> {
-            int[] c = WALLPAPERS[pos];
-            GradientDrawable dot = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                    new int[] {glow(c[3], c[0]), c[1], glow(c[4], c[0])});
-            dot.setShape(GradientDrawable.OVAL);
-            dot.setStroke(Math.max(1, px(2)), 0x26FFFFFF);
-            dot.setSize(size, size);
-            return dot;
-        }, size, wallpaper(), this::showWallpaper, which -> {
-            getSharedPreferences(PREFS, 0).edit().putString("wallpaper", WALLPAPER_NAMES[which]).apply();
-            showWallpaper(which);
-        });
-    }
-
-    // A glow colour made solid over the base, three times as strong, so a small dot shows it.
-    private static int glow(int glow, int base) {
-        float a = Math.min(1f, 3 * (glow >>> 24) / 255f);
-        int r = Math.round(Color.red(base) + (Color.red(glow) - Color.red(base)) * a);
-        int g = Math.round(Color.green(base) + (Color.green(glow) - Color.green(base)) * a);
-        int b = Math.round(Color.blue(base) + (Color.blue(glow) - Color.blue(base)) * a);
-        return Color.rgb(r, g, b);
-    }
-
-    private static GradientDrawable radial(int color, float cx, float cy, float r) {
-        GradientDrawable g = new GradientDrawable();
-        g.setGradientType(GradientDrawable.RADIAL_GRADIENT);
-        g.setColors(new int[] {color, color & 0x00FFFFFF});
-        g.setGradientCenter(cx, cy);
-        g.setGradientRadius(r);
-        return g;
-    }
-
     private void buildTiles() {
         // While tiles are swapped out, removing the focused one would hand focus down the row (and
         // overwrite focusedKey), so hold focus off until the new tiles are in.
@@ -494,7 +649,7 @@ public class MainActivity extends Activity {
         PackageManager pm = getPackageManager();
         int m = px(MARGIN), g = px(GAP);
         int w = (getResources().getDisplayMetrics().widthPixels - 2 * m - g * (PER_ROW - 1)) / PER_ROW;
-        int h = w * 9 / 16;
+        int h = w * 10 / 16; // Apple TV's 16:10 tiles
         tileW = w;
         tileH = h;
 
@@ -508,6 +663,7 @@ public class MainActivity extends Activity {
         int bottomTop = gridTop + rows * px(ROW_STEP);
         ((FrameLayout.LayoutParams) moveHint.getLayoutParams()).topMargin = gridTop - px(64);
         root.setMinimumHeight(bottomTop + h + px(MARGIN));
+        glass.setPanelTop(gridTop - px(60));
 
         for (String pkg : apps) {
             Intent li = launchIntent(pm, pkg);
@@ -540,21 +696,22 @@ public class MainActivity extends Activity {
         addTile(root, SETTINGS, Strings.t("Settings"), null, LineIcon.SETTINGS, null, m + col++ * (w + g), bottomTop, w, h);
         addTile(root, ADD, Strings.t("Add app"), null, LineIcon.PLUS, null, m + col * (w + g), bottomTop, w, h);
 
-        // Plain icons at the top right, level with the date: any settings shortcuts picked, then the
-        // network icon. Added last, so the first app keeps first focus; Up from the apps reaches them.
+        // Plain icons at the top right, left of the clock: any settings shortcuts picked. Added last, so
+        // the first app keeps first focus; Up from the apps reaches them. (Wi-Fi lives in Settings.)
         List<Integer> quick = quickList();
         int ib = px(ICON_BUTTON), ig = px(ICON_GAP);
-        // The last icon's right edge lines up with the apps' (its focus circle sticks out past them).
-        int qx = getResources().getDisplayMetrics().widthPixels - m + (ib - px(ICON_SIZE)) / 2
-                - (quick.size() + 1) * ib - quick.size() * ig;
+        int qx = getResources().getDisplayMetrics().widthPixels - px(300) - quick.size() * (ib + ig);
         for (int q : quick) {
             addIcon(QUICK + QUICK_NAMES[q], Strings.t(QUICK_LABELS[q]), new LineIcon(QUICK_ICONS[q]), qx);
             qx += ib + ig;
         }
-        netIcon = addIcon(NETWORK, Strings.t("Network"), null, qx);
-        netState = -1;
-        refreshNetwork();
 
+        // Up from the top row of apps goes to the profile picture, and Down from it back to the first app.
+        for (int k = 0; k < tiles.size() && k < PER_ROW && k < rowApps.size(); k++) tiles.get(k).setNextFocusUpId(homeAvatar.getId());
+        if (!tiles.isEmpty()) {
+            if (tiles.get(0).getId() == View.NO_ID) tiles.get(0).setId(View.generateViewId());
+            homeAvatar.setNextFocusDownId(tiles.get(0).getId());
+        }
         root.setDescendantFocusability(ViewGroup.FOCUS_AFTER_DESCENDANTS);
         // An app that was uninstalled hands focus to the one now in its place, as Remove does.
         if (wantAt >= 0 && !rowApps.contains(want))
@@ -603,7 +760,7 @@ public class MainActivity extends Activity {
         card.setTag(key);
 
         // Banner tiles show their name underneath when focused.
-        final TextView caption = banner == null ? null : text(px(24), Color.WHITE, regular);
+        final TextView caption = banner == null ? null : text(px(25), Color.WHITE, semibold);
         if (caption != null) {
             caption.setText(label);
             caption.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -615,17 +772,7 @@ public class MainActivity extends Activity {
             if (has) focusedKey = key;
             lift(v, bg, has, glass ? 0x13FFFFFF : 0xFF1E1A1C, glass ? 0x38FFFFFF : 0xFF1E1A1C,
                     px(RADIUS), px(RADIUS + RADIUS_UP));
-            if (caption != null) {
-                caption.animate().cancel();
-                if (has) {
-                    caption.setVisibility(View.VISIBLE);
-                    caption.setAlpha(0f);
-                    caption.animate().alpha(1f).setDuration(FOCUS_MS).setInterpolator(FOCUS_EASE).start();
-                } else {
-                    caption.animate().alpha(0f).setDuration(FOCUS_MS / 2).withEndAction(
-                            () -> caption.setVisibility(View.INVISIBLE)).start();
-                }
-            }
+            if (caption != null) fadeCaption(caption, has);
         });
         final boolean editable = rowApps.contains(key);
         card.setOnClickListener(v -> open(key));
@@ -677,40 +824,54 @@ public class MainActivity extends Activity {
     }
 
     // The focus lift: the view grows and rises while its background fades and rounds off. A new
-    // change cancels the fade the view was running, so a fast run of d-pad presses only ever shows
-    // the tile in front and the one it just left mid-move.
-    private void lift(View v, GradientDrawable bg, boolean has, int restColor, int focusColor,
+    // change cancels the one the view was running, so a fast run of d-pad presses only ever shows
+    // the tile in front and the one it just left mid-move. Frame-driven (Motion), so it still moves
+    // on a TV with animations turned off.
+    private void lift(final View v, final GradientDrawable bg, boolean has, int restColor, int focusColor,
                       int restRadius, int focusRadius) {
-        v.animate().cancel();
-        v.animate().scaleX(has ? 1.1f : 1f).scaleY(has ? 1.1f : 1f).translationZ(has ? px(26) : 0)
-                .setDuration(FOCUS_MS).setInterpolator(FOCUS_EASE).withLayer().start();
-        tween(v, bg, has, restColor, focusColor, restRadius, focusRadius);
+        Motion old = lifts.remove(v);
+        if (old != null) old.cancel();
+        final float s0 = v.getScaleX(), s1 = has ? FOCUS_SCALE : 1f;
+        final float z0 = v.getTranslationZ(), z1 = has ? px(26) : 0;
+        final int from = has ? restColor : focusColor, to = has ? focusColor : restColor;
+        final int r0 = has ? restRadius : focusRadius, r1 = has ? focusRadius : restRadius;
+        lifts.put(v, Motion.run(FOCUS_MS, t -> {
+            float sc = s0 + (s1 - s0) * t;
+            v.setScaleX(sc);
+            v.setScaleY(sc);
+            v.setTranslationZ(z0 + (z1 - z0) * t);
+            if (bg != null && from != to) bg.setColor(blend(from, to, t));
+            if (bg != null && r0 != r1) bg.setCornerRadius(r0 + (r1 - r0) * t);
+        }, () -> lifts.remove(v)));
     }
 
     // Just the background part: colour and corner radius, with no view animation. Used for the
     // dropdown rows, whose text already changes colour on focus.
-    private void tween(View v, GradientDrawable bg, boolean has, int restColor, int focusColor,
+    private void tween(final View v, final GradientDrawable bg, boolean has, int restColor, int focusColor,
                        int restRadius, int focusRadius) {
         if (bg == null) return;
-        ValueAnimator old = lifts.remove(v);
+        Motion old = lifts.remove(v);
         if (old != null) old.cancel();
         final int from = has ? restColor : focusColor, to = has ? focusColor : restColor;
         final int r0 = has ? restRadius : focusRadius, r1 = has ? focusRadius : restRadius;
         if (from == to && r0 == r1) return;
-        // Tweened by hand so no objects are made per frame: this runs on TVs with 2 GB of RAM.
-        final ValueAnimator a = ValueAnimator.ofFloat(0f, 1f);
-        a.setDuration(FOCUS_MS);
-        a.setInterpolator(FOCUS_EASE);
-        a.addUpdateListener(an -> {
-            float t = (float) an.getAnimatedValue();
+        lifts.put(v, Motion.run(FOCUS_MS, t -> {
             if (from != to) bg.setColor(blend(from, to, t));
             if (r0 != r1) bg.setCornerRadius(r0 + (r1 - r0) * t);
-        });
-        a.addListener(new AnimatorListenerAdapter() {
-            @Override public void onAnimationEnd(Animator an) { if (lifts.get(v) == a) lifts.remove(v); }
-        });
-        lifts.put(v, a);
-        a.start();
+        }, () -> lifts.remove(v)));
+    }
+
+    // The focused tile's name fades in under it, and out (faster) when focus moves on.
+    private void fadeCaption(final TextView caption, final boolean show) {
+        Motion old = lifts.remove(caption);
+        if (old != null) old.cancel();
+        if (show && caption.getVisibility() != View.VISIBLE) caption.setAlpha(0f);
+        caption.setVisibility(View.VISIBLE);
+        final float a0 = caption.getAlpha(), a1 = show ? 1f : 0f;
+        lifts.put(caption, Motion.run(show ? FOCUS_MS : FOCUS_MS / 2, t -> caption.setAlpha(a0 + (a1 - a0) * t), () -> {
+            lifts.remove(caption);
+            if (!show) caption.setVisibility(View.INVISIBLE);
+        }));
     }
 
     private static int blend(int from, int to, float t) {
@@ -757,8 +918,7 @@ public class MainActivity extends Activity {
             return;
         } else if (SETTINGS.equals(key)) {
             dropdown(tile(SETTINGS), SETTINGS_ITEMS, which -> {
-                if (which == 0) showWallpapers();
-                else if (which == 1) openBrightness();
+                if (which == 0) openBrightness();
                 else openTvSettings();
             });
             return;
@@ -1443,15 +1603,17 @@ public class MainActivity extends Activity {
         return i != null ? i : pm.getLaunchIntentForPackage(pkg);
     }
 
-    // Xiaomi TVs ship MiLan Pro but don't register it by name; every other TV gets Roboto.
-    private static void loadFonts() {
+    // Inter, bundled in assets/fonts (SIL Open Font License): close to Apple's look on every TV.
+    private static void loadFonts(Context c) {
         if (regular != null) return;
-        regular = fromFile("/system/fonts/MILanPro_Normal.ttf", Typeface.create("sans-serif", Typeface.NORMAL));
-        semibold = fromFile("/system/fonts/MILanPro_SemiBold.ttf", Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        regular = fromAsset(c, "fonts/Inter-Regular.ttf", Typeface.create("sans-serif", Typeface.NORMAL));
+        medium = fromAsset(c, "fonts/Inter-Medium.ttf", Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        semibold = fromAsset(c, "fonts/Inter-SemiBold.ttf", Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        bold = fromAsset(c, "fonts/Inter-Bold.ttf", Typeface.create("sans-serif", Typeface.BOLD));
     }
 
-    private static Typeface fromFile(String path, Typeface fallback) {
-        try { return new File(path).exists() ? Typeface.createFromFile(path) : fallback; }
+    private static Typeface fromAsset(Context c, String path, Typeface fallback) {
+        try { return Typeface.createFromAsset(c.getAssets(), path); }
         catch (Exception e) { return fallback; }
     }
 

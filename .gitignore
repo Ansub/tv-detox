@@ -3,3 +3,5 @@ key.jks
 *.apk
 .DS_Store
 .idea
+test-lib/
+.superpowers/
