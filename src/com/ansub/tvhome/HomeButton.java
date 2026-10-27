@@ -28,6 +28,23 @@ public class HomeButton extends AccessibilityService {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
                 || !GOOGLE_TV_HOME.getPackageName().equals(String.valueOf(event.getPackageName()))
                 || !GOOGLE_TV_HOME.getClassName().equals(String.valueOf(event.getClassName())) || !setupDone()) return;
+        redirect();
+    }
+
+    // Google TV's home screen can open before this service connects at boot; see BootRedirect.
+    @Override
+    protected void onServiceConnected() {
+        super.onServiceConnected();
+        SharedPreferences prefs = prefs(this);
+        boolean shown = bootCount(this) >= 0 && prefs.getInt("shown_boot", -1) == bootCount(this);
+        if (BootRedirect.shouldOpen(SystemClock.elapsedRealtime(), setupDone(), stayingOnGoogleTv(prefs), shown)) {
+            prefs.edit().putInt("shown_boot", bootCount(this)).commit();
+            redirect();
+        }
+    }
+
+    // Opens this home screen over Google TV's, with the same guard against a crash loop.
+    private void redirect() {
         SharedPreferences prefs = prefs(this);
         if (stayingOnGoogleTv(prefs)) return;
         long now = SystemClock.elapsedRealtime();
@@ -64,7 +81,8 @@ public class HomeButton extends AccessibilityService {
 
     // Back on this home screen: Home comes here again.
     static void onHomeResumed(Context c) {
-        prefs(c).edit().remove("google_tv_boot").remove("google_tv_boot_count").commit();
+        // Also remembers that this boot's home screen has been up (see BootRedirect).
+        prefs(c).edit().remove("google_tv_boot").remove("google_tv_boot_count").putInt("shown_boot", bootCount(c)).commit();
     }
 
     // This home screen opened and didn't crash. Also resets a stopped redirect loop.

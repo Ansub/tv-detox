@@ -1,0 +1,27 @@
+Lock screen photos, from Unsplash (https://unsplash.com/license: free to use, no permission needed).
+Cropped to 1920x1080. Source of each file:
+
+01.jpg  https://images.unsplash.com/photo-1414609245224-afa02bfb3fda
+02.jpg  https://images.unsplash.com/photo-1426604966848-d7adac402bff
+03.jpg  https://images.unsplash.com/photo-1433086966358-54859d0ed716
+04.jpg  https://images.unsplash.com/photo-1439066615861-d1af74d74000
+05.jpg  https://images.unsplash.com/photo-1454496522488-7a8e488e8606
+06.jpg  https://images.unsplash.com/photo-1464822759023-fed622ff2c3b
+07.jpg  https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05
+08.jpg  https://images.unsplash.com/photo-1470770841072-f978cf4d019e
+09.jpg  https://images.unsplash.com/photo-1475924156734-496f6cac6ec1
+10.jpg  https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1
+11.jpg  https://images.unsplash.com/photo-1477959858617-67f85cf4f1df
+12.jpg  https://images.unsplash.com/photo-1500530855697-b586d89ba3ee
+13.jpg  https://images.unsplash.com/photo-1500534314209-a25ddb2bd429
+14.jpg  https://images.unsplash.com/photo-1500964757637-c85e8a162699
+15.jpg  https://images.unsplash.com/photo-1501594907352-04cda38ebc29
+16.jpg  https://images.unsplash.com/photo-1501785888041-af3ef285b470
+17.jpg  https://images.unsplash.com/photo-1502082553048-f009c37129b9
+18.jpg  https://images.unsplash.com/photo-1505142468610-359e7d316be0
+19.jpg  https://images.unsplash.com/photo-1506744038136-46273834b3fb
+20.jpg  https://images.unsplash.com/photo-1506905925346-21bda4d32df4
+21.jpg  https://images.unsplash.com/photo-1507525428034-b723cf961d3e
+22.jpg  https://images.unsplash.com/photo-1514565131-fce0801e5785
+23.jpg  https://images.unsplash.com/photo-1519681393784-d120267933ba
+24.jpg  https://images.unsplash.com/photo-1532274402911-5a369e4c4bb5

@@ -24,7 +24,7 @@ rm -rf out; mkdir -p out/classes out/dex out/gen/com/ansub/tvhome
 } > out/gen/com/ansub/tvhome/Apps.java
 
 "$BT/aapt2" compile --dir res -o out/res.zip
-"$BT/aapt2" link -o out/base.apk -I "$JAR" --manifest AndroidManifest.xml --min-sdk-version 21 --target-sdk-version 34 out/res.zip
+"$BT/aapt2" link -o out/base.apk -I "$JAR" --manifest AndroidManifest.xml --min-sdk-version 21 --target-sdk-version 34 -A assets out/res.zip
 # shellcheck disable=SC2046 # javac and d8 want one argument per file, so the list is split on purpose
 javac -nowarn -Xlint:-options -encoding UTF-8 -source 1.8 -target 1.8 -bootclasspath "$JAR:$BT/core-lambda-stubs.jar" \
   -d out/classes $(find src out/gen -name "*.java")

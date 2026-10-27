@@ -1,0 +1,6 @@
+{"events":[
+ {"id":"1","date":"2026-10-27T00:15Z","status":{"type":{"state":"pre"}}},
+ {"id":"2","date":"2026-10-27T01:00Z","status":{"type":{"state":"pre"}},"competitions":[{"competitors":[{"homeAway":"home","team":{"id":"1","abbreviation":"AAA","shortDisplayName":"Aces"}},{"homeAway":"away","team":{"id":"2","abbreviation":"BBB"}}]}]},
+ {},
+ {"id":"4","competitions":[{"competitors":[{"homeAway":"home","team":{"id":"1"}}]}]}
+]}
