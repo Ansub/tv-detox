@@ -93,7 +93,7 @@ public class MainActivity extends Activity {
     private static final String ADD = "add";
     private static final String[] EDIT_ITEMS = {"Move", "Replace", "Remove from home", "Uninstall"};
     private static final String[] EDIT_ITEMS_SYSTEM = {"Move", "Replace", "Remove from home", "App info"};
-    private static final int PER_ROW = 6, MAX_INPUTS = 4;
+    private static final int PER_ROW = 6, MAX_INPUTS = 6;
 
     // Settings shortcuts: name, label, icon. Tile keys are QUICK + name.
     private static final String QUICK = "quick:";
@@ -499,15 +499,21 @@ public class MainActivity extends Activity {
         tileH = h;
 
         List<String> apps = appList(pm);
+        // Bottom tiles: Play Store, the inputs, Settings and Add app. More than six wrap onto a second
+        // row, like the apps, so a TV with four HDMI ports and an antenna shows them all.
+        boolean store = !apps.contains(PLAY_STORE) && launchIntent(pm, PLAY_STORE) != null;
+        List<TvInputInfo> inputs = hdmiInputs();
+        int bottomTiles = (store ? 1 : 0) + inputs.size() + 2;
+        int bottomRows = (bottomTiles + PER_ROW - 1) / PER_ROW;
         // Apps fill rows of six. With more rows the grid starts higher, so up to two rows of apps and
         // the bottom row still fit on screen; past that the page scrolls.
         int launchable = 0;
         for (String pkg : apps) if (launchIntent(pm, pkg) != null) launchable++;
         int rows = Math.max(1, (launchable + PER_ROW - 1) / PER_ROW);
-        gridTop = Math.max(px(GRID_MIN_TOP), px(ROW1_TOP) - (rows - 1) * px(ROW_STEP));
+        gridTop = Math.max(px(GRID_MIN_TOP), px(ROW1_TOP) - (rows + bottomRows - 2) * px(ROW_STEP));
         int bottomTop = gridTop + rows * px(ROW_STEP);
         ((FrameLayout.LayoutParams) moveHint.getLayoutParams()).topMargin = gridTop - px(64);
-        root.setMinimumHeight(bottomTop + h + px(MARGIN));
+        root.setMinimumHeight(bottomTop + (bottomRows - 1) * px(ROW_STEP) + h + px(MARGIN));
 
         for (String pkg : apps) {
             Intent li = launchIntent(pm, pkg);
@@ -527,18 +533,18 @@ public class MainActivity extends Activity {
             addTile(root, pkg, label, banner, null, icon, gridX(i), gridY(i), w, h);
         }
 
-        // Bottom row: Play Store, HDMI inputs, Settings and Add app, six at most.
+        // Bottom rows: Play Store, the inputs (the antenna first, then HDMI), Settings and Add app.
         int col = 0;
-        boolean store = !apps.contains(PLAY_STORE) && launchIntent(pm, PLAY_STORE) != null;
-        List<TvInputInfo> inputs = hdmiInputs();
-        int room = PER_ROW - 2 - (store ? 1 : 0);
-        if (inputs.size() > room) inputs = inputs.subList(0, room);
         if (store)
-            addTile(root, PLAY_STORE, "Play Store", null, LineIcon.PLAY, null, m + col++ * (w + g), bottomTop, w, h);
+            addTile(root, PLAY_STORE, "Play Store", null, LineIcon.PLAY, null, m + col % PER_ROW * (w + g),
+                    bottomTop + col++ / PER_ROW * px(ROW_STEP), w, h);
         for (TvInputInfo in : inputs)
-            addTile(root, in.getId(), inputLabel(in), null, LineIcon.HDMI, null, m + col++ * (w + g), bottomTop, w, h);
-        addTile(root, SETTINGS, Strings.t("Settings"), null, LineIcon.SETTINGS, null, m + col++ * (w + g), bottomTop, w, h);
-        addTile(root, ADD, Strings.t("Add app"), null, LineIcon.PLUS, null, m + col * (w + g), bottomTop, w, h);
+            addTile(root, in.getId(), inputLabel(in), null, in.getType() == TvInputInfo.TYPE_TUNER ? LineIcon.PICTURE
+                    : LineIcon.HDMI, null, m + col % PER_ROW * (w + g), bottomTop + col++ / PER_ROW * px(ROW_STEP), w, h);
+        addTile(root, SETTINGS, Strings.t("Settings"), null, LineIcon.SETTINGS, null, m + col % PER_ROW * (w + g),
+                bottomTop + col++ / PER_ROW * px(ROW_STEP), w, h);
+        addTile(root, ADD, Strings.t("Add app"), null, LineIcon.PLUS, null, m + col % PER_ROW * (w + g),
+                bottomTop + col / PER_ROW * px(ROW_STEP), w, h);
 
         // Plain icons at the top right, level with the date: any settings shortcuts picked, then the
         // network icon. Added last, so the first app keeps first focus; Up from the apps reaches them.
@@ -796,7 +802,10 @@ public class MainActivity extends Activity {
     // Google TV's input player, that goes first, because some Google TVs ship com.android.tv as a stub
     // that starts fine but only says "Hello World!" (issue #5).
     private void openInput(String id) {
-        Intent view = new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(id));
+        TvInputInfo in = inputById(id);
+        boolean tuner = in != null && in.getType() == TvInputInfo.TYPE_TUNER;
+        Intent view = new Intent(Intent.ACTION_VIEW, tuner ? TvContract.buildChannelsUriForInput(id)
+                : TvContract.buildChannelUriForPassthroughInput(id));
         List<Intent> tries = new ArrayList<>();
         ResolveInfo def = getPackageManager().resolveActivity(view, PackageManager.MATCH_DEFAULT_ONLY);
         if (def != null && def.activityInfo != null && INPUT_PLAYER.equals(def.activityInfo.packageName))
@@ -1396,9 +1405,13 @@ public class MainActivity extends Activity {
 
     // HDMI inputs are what a home screen shows. install.sh's FAKE_INPUT=1 takes every TV input
     // instead, so the tiles and their menus can be tested on an emulator that has no HDMI of its own.
-    private boolean countsAsInput(TvInputInfo in) {
+    // The TV's own antenna or cable tuner counts too: a tuner from the same system service as the HDMI
+    // inputs (tuners), not an app's internet channels like TCL Channel.
+    private boolean countsAsInput(TvInputInfo in, Set<String> tuners) {
         boolean fake = "1".equals(prefs().getString(PREF_FAKE_INPUTS, null));
-        return (fake || in.getType() == TvInputInfo.TYPE_HDMI) && in.getParentId() == null && !in.isHidden(this);
+        boolean type = fake || in.getType() == TvInputInfo.TYPE_HDMI
+                || (in.getType() == TvInputInfo.TYPE_TUNER && tuners.contains(in.getServiceInfo().packageName));
+        return type && in.getParentId() == null && !in.isHidden(this);
     }
 
     // Every HDMI input the TV reports that isn't switched off in its own settings, hidden or not.
@@ -1406,8 +1419,14 @@ public class MainActivity extends Activity {
         List<TvInputInfo> out = new ArrayList<>();
         TvInputManager tim = (TvInputManager) getSystemService(Context.TV_INPUT_SERVICE);
         if (tim == null) return out;
-        for (TvInputInfo in : tim.getTvInputList()) if (countsAsInput(in)) out.add(in);
-        Collections.sort(out, (a, b) -> a.getId().compareTo(b.getId()));
+        List<TvInputInfo> all = tim.getTvInputList();
+        Set<String> tuners = new HashSet<>(); // the services that also give the TV's HDMI ports
+        for (TvInputInfo in : all) if (in.isPassthroughInput()) tuners.add(in.getServiceInfo().packageName);
+        for (TvInputInfo in : all) if (countsAsInput(in, tuners)) out.add(in);
+        // The antenna first, then the inputs in the TV's order.
+        Collections.sort(out, (a, b) -> a.getType() != b.getType() && (a.getType() == TvInputInfo.TYPE_TUNER
+                || b.getType() == TvInputInfo.TYPE_TUNER) ? (a.getType() == TvInputInfo.TYPE_TUNER ? -1 : 1)
+                : a.getId().compareTo(b.getId()));
         return out;
     }
 
