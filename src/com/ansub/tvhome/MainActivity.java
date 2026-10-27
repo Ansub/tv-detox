@@ -122,6 +122,8 @@ public class MainActivity extends Activity {
     private static final int FOCUS_MS = 180, RADIUS_UP = 10;
     private static final Interpolator FOCUS_EASE = new DecelerateInterpolator(1.8f);
     private static final int ROW1_TOP = 604, ROW_STEP = 224;
+    // The clock bar at the top stays put; the tiles scroll underneath it, below this line.
+    private static final int HEADER = 320;
     private static final int GRID_MIN_TOP = 400; // more rows push the grid up, but not into the clock
     private static final int ICON_TOP = 76, ICON_BUTTON = 72, ICON_SIZE = 40, ICON_GAP = 12; // level with the date
 
@@ -158,6 +160,10 @@ public class MainActivity extends Activity {
 
     private FrameLayout root; // the page, inside a vertical scroller
     private ScrollView scroller;
+    private FrameLayout header; // the clock, the date and the icons by it: they don't scroll
+    private FrameLayout moreBelow; // the scroll hint at the bottom
+    private View shade; // the shadow under the clock bar, once the tiles have scrolled under it
+    private boolean moreShown, shadeShown;
     private int tileW, tileH, gridTop; // app grid geometry, set by buildTiles
     private final List<View> tiles = new ArrayList<>();
     private final Map<View, ValueAnimator> lifts = new WeakHashMap<>(); // a running focus fade per tile
@@ -215,6 +221,8 @@ public class MainActivity extends Activity {
         scroller.setVerticalScrollBarEnabled(false);
         scroller.setOverScrollMode(View.OVER_SCROLL_NEVER);
         scroller.setClipChildren(false);
+        scroller.setPadding(0, px(HEADER), 0, 0);
+        scroller.setClipToPadding(true);
         root = new FrameLayout(this);
         root.setClipChildren(false);
         scroller.addView(root, new FrameLayout.LayoutParams(-1, -2));
@@ -237,18 +245,45 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-2, -2);
         tp.topMargin = px(-20); // pull the big digits up under the date
         clock.addView(time, tp);
-        root.addView(clock, at(px(MARGIN), px(92), -2, -2));
+        header = new FrameLayout(this);
+        header.setClipChildren(false);
+        header.addView(clock, at(px(MARGIN), px(92), -2, -2));
 
         moveHint = text(px(24), 0xA8FFFFFF, regular);
         moveHint.setText(Strings.t("Use the arrows to move it, then press OK"));
         moveHint.setVisibility(View.GONE);
-        root.addView(moveHint, at(px(MARGIN), px(ROW1_TOP - 64), -2, -2));
+        root.addView(moveHint, at(px(MARGIN), px(ROW1_TOP - 64 - HEADER), -2, -2));
 
+        // The page scrolls once the tiles don't all fit: a soft fade and a small arrow at the bottom say
+        // there's more below, and go once you've reached it. They take no focus and draw nothing else.
+        FrameLayout page = new FrameLayout(this);
+        page.setClipChildren(false);
+        page.addView(scroller, new FrameLayout.LayoutParams(-1, -1));
+        page.addView(header, new FrameLayout.LayoutParams(-1, px(HEADER)));
+        shade = new View(this);
+        shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[] {0x73000000, 0x00000000}));
+        shade.setAlpha(0f);
+        page.addView(shade, at(0, px(HEADER), -1, px(56)));
+        moreBelow = new FrameLayout(this);
+        moreBelow.setBackground(new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
+                new int[] {0x99000000, 0x00000000}));
+        ImageView arrow = new ImageView(this);
+        arrow.setImageDrawable(new LineIcon(LineIcon.CHEVRON_DOWN));
+        arrow.setAlpha(0.6f);
+        FrameLayout.LayoutParams ap = new FrameLayout.LayoutParams(px(40), px(40), Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
+        ap.bottomMargin = px(14);
+        moreBelow.addView(arrow, ap);
+        moreBelow.setAlpha(0f);
+        moreBelow.setFocusable(false);
+        page.addView(moreBelow, new FrameLayout.LayoutParams(-1, px(110), Gravity.BOTTOM));
+        scroller.getViewTreeObserver().addOnScrollChangedListener(this::refreshMoreBelow);
+        scroller.getViewTreeObserver().addOnGlobalLayoutListener(this::refreshMoreBelow);
         scroller.getViewTreeObserver().addOnGlobalFocusChangeListener((was, now) -> {
             if (now != null && now.getParent() instanceof View && root.indexOfChild((View) now.getParent()) >= 0)
                 scroller.post(() -> keepInView(now));
         });
-        setContentView(scroller);
+        setContentView(page);
 
         IntentFilter f = new IntentFilter();
         f.addAction(Intent.ACTION_PACKAGE_ADDED);
@@ -493,10 +528,26 @@ public class MainActivity extends Activity {
     private void keepInView(View tile) {
         View wrap = (View) tile.getParent();
         int pad = px(MARGIN);
-        int top = wrap.getTop() - pad, bottom = wrap.getBottom() + pad, y = scroller.getScrollY(), h = scroller.getHeight();
+        int top = wrap.getTop() - pad, bottom = wrap.getBottom() + pad, y = scroller.getScrollY();
+        int h = scroller.getHeight() - scroller.getPaddingTop(); // the part below the clock bar
         if (wrap.getTop() <= gridTop) scroller.smoothScrollTo(0, 0);
         else if (bottom > y + h) scroller.smoothScrollTo(0, bottom - h);
         else if (top < y) scroller.smoothScrollTo(0, Math.max(0, top));
+    }
+
+    // Fades the scroll hint in while there's more below, and the shadow under the clock bar while
+    // tiles have scrolled under it.
+    private void refreshMoreBelow() {
+        if (moreBelow == null) return;
+        boolean more = scroller.canScrollVertically(1), under = scroller.canScrollVertically(-1);
+        if (more != moreShown) {
+            moreShown = more;
+            moreBelow.animate().alpha(more ? 1f : 0f).setDuration(FOCUS_MS).start();
+        }
+        if (under != shadeShown) {
+            shadeShown = under;
+            shade.animate().alpha(under ? 1f : 0f).setDuration(FOCUS_MS).start();
+        }
     }
 
     private void buildTiles() {
@@ -533,7 +584,7 @@ public class MainActivity extends Activity {
         int launchable = 0;
         for (String pkg : apps) if (launchIntent(pm, pkg) != null) launchable++;
         int rows = Math.max(1, (launchable + PER_ROW - 1) / PER_ROW);
-        gridTop = Math.max(px(GRID_MIN_TOP), px(ROW1_TOP) - (rows + bottomRows - 2) * px(ROW_STEP));
+        gridTop = Math.max(px(GRID_MIN_TOP), px(ROW1_TOP) - (rows + bottomRows - 2) * px(ROW_STEP)) - px(HEADER);
         int bottomTop = gridTop + rows * px(ROW_STEP);
         ((FrameLayout.LayoutParams) moveHint.getLayoutParams()).topMargin = gridTop - px(64);
         root.setMinimumHeight(bottomTop + (bottomRows - 1) * px(ROW_STEP) + h + px(MARGIN));
@@ -774,7 +825,7 @@ public class MainActivity extends Activity {
         FrameLayout wrap = new FrameLayout(this);
         wrap.setClipChildren(false);
         wrap.addView(card, new FrameLayout.LayoutParams(b, b));
-        root.addView(wrap, at(x, px(ICON_TOP), b, b));
+        header.addView(wrap, at(x, px(ICON_TOP), b, b));
         tiles.add(card);
         return iv;
     }
