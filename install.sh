@@ -214,10 +214,12 @@ fi
 # YES=1 doesn't cover it: it needs its own answer, or YES_SETUP=1.
 # Android erases the Wi-Fi networks an app saved when that app is turned off. Google TV's setup
 # app often saved the network during first setup ("cname" in the Wi-Fi service's saved list).
-# Without the "Wi-Fi is" line the list wasn't read, so assume it did.
+# Without the "Wi-Fi is" line the list wasn't read, and a timed-out dump may have stopped before
+# it, so in both cases assume it did.
 saved_wifi() {
-  _wifi=$(sh_tv "dumpsys wifi | grep -o -E 'cname=[^ ]*|^Wi-Fi is [a-z]+'" 2>/dev/null) || true
+  _wifi=$(sh_tv "dumpsys wifi | grep -o -E 'cname=[^ ]*|^Wi-Fi is [a-z]+|DUMP TIMEOUT'" 2>/dev/null) || true
   printf '%s\n' "$_wifi" | grep -q '^Wi-Fi is ' || return 0
+  ! printf '%s\n' "$_wifi" | grep -q 'DUMP TIMEOUT' || return 0
   printf '%s\n' "$_wifi" | grep -Fqx "cname=$1"
 }
 off_list=$(sh_tv pm list packages -d "$LAUNCHERX" 2>/dev/null) || off_list=
