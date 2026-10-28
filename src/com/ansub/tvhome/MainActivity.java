@@ -420,14 +420,33 @@ public class MainActivity extends Activity {
         return super.onKeyUp(code, ev);
     }
 
-    // Static gradient, drawn once by the window: no extra view, no animation.
+    // Static gradient, drawn by the window: no extra view, no animation. It's painted once into a
+    // screen-sized picture: as three gradients, low-end GPUs paint it again on every frame of a focus
+    // move, and those frames take two to six times as long (#69). On Android 8+ the picture moves to
+    // the GPU, so the home screen uses no more memory than before; if anything fails, the gradients stay.
     private Drawable background(int[] c) {
         GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[] {c[0], c[1], c[2]});
         GradientDrawable top = radial(c[3], 0.08f, -0.12f, px(1250));
         GradientDrawable bottom = radial(c[4], 1.0f, 1.1f, px(1000));
         for (GradientDrawable g : new GradientDrawable[] {base, top, bottom}) g.setDither(true);
-        return new LayerDrawable(new Drawable[] {base, top, bottom});
+        Drawable layers = new LayerDrawable(new Drawable[] {base, top, bottom});
+        int w = getResources().getDisplayMetrics().widthPixels, h = getResources().getDisplayMetrics().heightPixels;
+        try {
+            Bitmap bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            layers.setBounds(0, 0, w, h);
+            layers.draw(new Canvas(bm));
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                Bitmap hw = bm.copy(Bitmap.Config.HARDWARE, false);
+                if (hw != null) {
+                    bm.recycle();
+                    bm = hw;
+                }
+            }
+            return new BitmapDrawable(getResources(), bm);
+        } catch (Throwable t) {
+            return layers;
+        }
     }
 
     // The saved wallpaper, as an index into WALLPAPERS (Dusk if none is saved).
