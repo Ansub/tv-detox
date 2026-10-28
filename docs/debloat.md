@@ -16,7 +16,7 @@ changes nothing:
 
 Work down the list from the top. Turn off, wait, check the TV still works.
 
-## The four rules
+## The five rules
 
 ### 1. Turn apps off, never uninstall them
 
@@ -50,6 +50,21 @@ Casting is not one app you can spot by name. On Google TV the receiver is
 "media"-looking names. Keep it on, and after a batch that touched anything Google, cast a
 video from your phone and confirm the TV still shows up. If it does not, `pm enable
 com.google.android.apps.mediashell` and reboot. On a TV that never casts, it is safe off.
+
+### 5. Never turn off the app that saved your Wi-Fi
+
+Android erases the Wi-Fi networks an app saved when that app is turned off. On Google TV that
+app is often the setup app, `com.google.android.tungsten.setupwraith`, which saved the network
+during first setup. Check before turning anything off:
+
+```
+adb shell "dumpsys wifi | grep -o 'cname=[^ ]*' | sort -u"
+# cname=com.google.android.tungsten.setupwraith
+```
+
+To free an app from this, forget the network on the TV (Settings > Network & Internet) and join
+it again. It is then saved by the system (`cname=android.uid.system:1000`). `candidates.sh`
+marks Wi-Fi owners `never`, and `install.sh` won't turn off the setup app while it owns one.
 
 ## A package name is not always the app
 
@@ -136,9 +151,10 @@ it's missing and crashes if started.
 | setup apps | `com.google.android.tungsten.setupwraith`, `com.google.android.partnersetup`, `com.google.android.onetimeinitializer` |
 | TCL basics | `com.tcl.tvinput` (HDMI and tuner), `com.tcl.tv` (Live TV, also the screen that shows HDMI), `com.tcl.suspension` (input picker), `com.tcl.providers.config`, `com.tcl.useragreement` |
 | Philips basics | `org.droidtv.` prefix: `homeintentresolver`, `GlobalKey`, `playtv`, `hdmiservice`, `channels`, `tvsystemui`, `tvpowermanagerservice`, `tv.tptvservice` ([TV Slim never-disable list](https://tvslim.app/packages/)); `lkb`, `xtv`, `settings`, `menudataapp`, `eum`, `aurora` ([tvdebloat DO NOT DISABLE block](https://tvdebloat.com/data/sources/philips-50pus8517.txt); removing `eum` or `aurora` leaves persistent `xtv` retrying) |
-| NVIDIA Shield basics | `com.nvidia.shieldservice`, `com.nvidia.blakepairing` and `com.nvidia.shield.remote.server` (the remote), `com.nvidia.bluetooth.ShieldBluetoothManager`, `com.nvidia.irtuner` (IR blaster), `com.nvidia.nvaudiosvc` (audio). Android keeps them running |
+| MediaTek basics | `com.mediatek.wwtv.tvcenter` (Live TV, also the screen that shows HDMI), `com.mediatek.tvinput` (inputs), `com.mediatek.tv.service` (TV service and the remote's keys), `com.mediatek.wwtv.setupwizard` |
 | `com.google.android.apps.mediashell` | casting, if you cast |
 | anything flagged `PERSISTENT` | it will not stay off |
+| whatever saved your Wi-Fi | see rule 5 |
 
 ### Commonly safe to turn off
 

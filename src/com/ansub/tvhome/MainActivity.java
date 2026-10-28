@@ -446,15 +446,33 @@ public class MainActivity extends Activity {
         return super.onKeyUp(code, ev);
     }
 
-    // Static gradient, drawn once by the window: no extra view, no animation. SettingsActivity sits on
-    // the same one.
-    static Drawable background(int[] c, float scale) {
+    // Static gradient, drawn by the window: no extra view, no animation. It's painted once into a
+    // screen-sized picture: as three gradients, low-end GPUs paint it again on every frame of a focus
+    // move, and those frames take two to six times as long (#69). On Android 8+ the picture moves to
+    // the GPU, so the home screen uses no more memory than before; if anything fails, the gradients stay.
+    private Drawable background(int[] c) {
         GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[] {c[0], c[1], c[2]});
         GradientDrawable top = radial(c[3], 0.08f, -0.12f, Math.round(1250 * scale));
         GradientDrawable bottom = radial(c[4], 1.0f, 1.1f, Math.round(1000 * scale));
         for (GradientDrawable g : new GradientDrawable[] {base, top, bottom}) g.setDither(true);
-        return new LayerDrawable(new Drawable[] {base, top, bottom});
+        Drawable layers = new LayerDrawable(new Drawable[] {base, top, bottom});
+        int w = getResources().getDisplayMetrics().widthPixels, h = getResources().getDisplayMetrics().heightPixels;
+        try {
+            Bitmap bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            layers.setBounds(0, 0, w, h);
+            layers.draw(new Canvas(bm));
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                Bitmap hw = bm.copy(Bitmap.Config.HARDWARE, false);
+                if (hw != null) {
+                    bm.recycle();
+                    bm = hw;
+                }
+            }
+            return new BitmapDrawable(getResources(), bm);
+        } catch (Throwable t) {
+            return layers;
+        }
     }
 
     // The saved wallpaper, as an index into WALLPAPERS (Dusk if none is saved).
@@ -1476,17 +1494,26 @@ public class MainActivity extends Activity {
     }
 
     private String tvInputLabel(TvInputInfo in) {
-        CharSequence custom = in.loadCustomLabel(this);
-        if (custom != null && custom.length() > 0) return withoutDeviceType(custom.toString());
-        CharSequence label = in.loadLabel(this);
-        return label != null && label.length() > 0 ? withoutDeviceType(label.toString()) : "HDMI";
+        String custom = inputLabelOrNull(in.loadCustomLabel(this));
+        if (custom != null) return custom;
+        String label = inputLabelOrNull(in.loadLabel(this));
+        return label != null ? label : "HDMI";
+    }
+
+    private static String inputLabelOrNull(CharSequence raw) {
+        if (raw == null || raw.length() == 0) return null;
+        String label = withoutDeviceType(raw.toString());
+        return "Philips".equalsIgnoreCase(android.os.Build.MANUFACTURER)
+                && (label.isEmpty() || "null".equals(label)) ? null : label;
     }
 
     // Philips stores a name as "name&DEVICE_TYPE" (like "Computer&COMPUTER"), so show the name only.
+    // Missing Philips names/types can be the literal "null"; a missing name uses the next fallback.
     // Only on Philips TVs: elsewhere a name like "AUDIO&VIDEO" is the name itself.
     private static String withoutDeviceType(String label) {
         if (!"Philips".equalsIgnoreCase(android.os.Build.MANUFACTURER)) return label;
         int amp = label.lastIndexOf('&');
+        if (amp >= 0 && (label.endsWith("&") || label.endsWith("&null"))) return label.substring(0, amp).trim();
         return amp > 0 && label.substring(amp + 1).matches("[A-Z][A-Z0-9_]{2,}") ? label.substring(0, amp).trim() : label;
     }
 

@@ -224,6 +224,16 @@ fi
 # is off. It's only offered if Home opens exactly that app, Google TV's home screen is already
 # off, the TV has finished its first setup, and the system doesn't keep it always running.
 # YES=1 doesn't cover it: it needs its own answer, or YES_SETUP=1.
+# Android erases the Wi-Fi networks an app saved when that app is turned off. Google TV's setup
+# app often saved the network during first setup ("cname" in the Wi-Fi service's saved list).
+# Without the "Wi-Fi is" line the list wasn't read, and a timed-out dump may have stopped before
+# it, so in both cases assume it did.
+saved_wifi() {
+  _wifi=$(sh_tv "dumpsys wifi | grep -o -E 'cname=[^ ]*|^Wi-Fi is [a-z]+|DUMP TIMEOUT'" 2>/dev/null) || true
+  printf '%s\n' "$_wifi" | grep -q '^Wi-Fi is ' || return 0
+  ! printf '%s\n' "$_wifi" | grep -q 'DUMP TIMEOUT' || return 0
+  printf '%s\n' "$_wifi" | grep -Fqx "cname=$1"
+}
 off_list=$(sh_tv pm list packages -d "$LAUNCHERX" 2>/dev/null) || off_list=
 if [ -n "$may_turn_off" ] && [ "$(current_home | sed 's|/.*||')" = "$WRAITH" ] \
     && printf '%s\n' "$off_list" | grep -Fqx "package:$LAUNCHERX"; then
@@ -231,6 +241,9 @@ if [ -n "$may_turn_off" ] && [ "$(current_home | sed 's|/.*||')" = "$WRAITH" ] \
   [ -n "$flags" ] || flags=PERSISTENT
   if [ "$(sh_tv settings get global device_provisioned)" != 1 ] || [ "$(sh_tv settings get secure user_setup_complete)" != 1 ]; then
     echo "Leaving $WRAITH on: your TV hasn't finished its first setup."
+  elif saved_wifi "$WRAITH"; then
+    echo "Leaving $WRAITH on: it saved your Wi-Fi network, and Android erases the networks an app saved when it's turned off."
+    echo "To fix it, on the TV forget your network (Settings > Network & Internet), join it again, then run this again."
   else case "$flags" in
     *PERSISTENT*) echo "Leaving $WRAITH on: it may be needed for your TV to start." ;;
     *)
