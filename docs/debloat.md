@@ -64,7 +64,8 @@ adb shell "dumpsys wifi | grep -o 'cname=[^ ]*' | sort -u"
 
 To free an app from this, forget the network on the TV (Settings > Network & Internet) and join
 it again. It is then saved by the system (`cname=android.uid.system:1000`). `candidates.sh`
-marks Wi-Fi owners `never`, and `install.sh` won't turn off the setup app while it owns one.
+marks Wi-Fi owners `never` (or says so when it couldn't read them), and `install.sh` won't turn
+off the setup app while it owns one.
 
 ## A package name is not always the app
 
