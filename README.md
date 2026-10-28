@@ -148,7 +148,7 @@ Menus differ a bit by brand. If you're stuck, ask Claude or Codex: *"I have a \<
 <summary><b>Which TVs does it work on?</b></summary>
 <br>
 
-Android TV 9 (a real TV), 11 and 12, and Google TV 14 (also a real TCL TV, see [TCL notes](#tcl-notes)). Every change is tested automatically on emulators.
+Android TV 9 (a real TV), 11 and 12, and Google TV 14 (also a real TCL TV, see [TCL notes](#tcl-notes)). Every change is tested automatically on Android TV 9 and 11 emulators.
 
 </details>
 
@@ -419,7 +419,7 @@ That works the same. Your laptop talks to the TV over its IP address on your hom
 <summary><b>Can I just do the cleanup and keep my TV's home screen?</b></summary>
 <br>
 
-Yes. Leave out step 5 of the prompt ("Install the home screen"). Your TV looks the same, just with the junk turned off.
+Yes. Leave out step 6 of the prompt ("Install the home screen"). Your TV looks the same, just with the junk turned off.
 
 </details>
 
