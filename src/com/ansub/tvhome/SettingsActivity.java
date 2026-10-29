@@ -95,7 +95,7 @@ public class SettingsActivity extends Activity {
         MainActivity.loadFonts();
         scale = getResources().getDisplayMetrics().widthPixels / 1920f;
         box = MainActivity.isBox(this);
-        getWindow().setBackgroundDrawable(MainActivity.background(
+        getWindow().setBackgroundDrawable(MainActivity.background(this,
                 MainActivity.WALLPAPERS[MainActivity.wallpaperIndex(this)], scale));
 
         FrameLayout root = new FrameLayout(this);

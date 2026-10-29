@@ -446,18 +446,19 @@ public class MainActivity extends Activity {
         return super.onKeyUp(code, ev);
     }
 
-    // Static gradient, drawn by the window: no extra view, no animation. It's painted once into a
-    // screen-sized picture: as three gradients, low-end GPUs paint it again on every frame of a focus
-    // move, and those frames take two to six times as long (#69). On Android 8+ the picture moves to
-    // the GPU, so the home screen uses no more memory than before; if anything fails, the gradients stay.
-    private Drawable background(int[] c) {
+    // Static gradient, drawn by the window: no extra view, no animation. SettingsActivity sits on the
+    // same one. It's painted once into a screen-sized picture: as three gradients, low-end GPUs paint
+    // it again on every frame of a focus move, and those frames take two to six times as long (#69).
+    // On Android 8+ the picture moves to the GPU, so the home screen uses no more memory than before;
+    // if anything fails, the gradients stay.
+    static Drawable background(Context ctx, int[] c, float scale) {
         GradientDrawable base = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
                 new int[] {c[0], c[1], c[2]});
         GradientDrawable top = radial(c[3], 0.08f, -0.12f, Math.round(1250 * scale));
         GradientDrawable bottom = radial(c[4], 1.0f, 1.1f, Math.round(1000 * scale));
         for (GradientDrawable g : new GradientDrawable[] {base, top, bottom}) g.setDither(true);
         Drawable layers = new LayerDrawable(new Drawable[] {base, top, bottom});
-        int w = getResources().getDisplayMetrics().widthPixels, h = getResources().getDisplayMetrics().heightPixels;
+        int w = ctx.getResources().getDisplayMetrics().widthPixels, h = ctx.getResources().getDisplayMetrics().heightPixels;
         try {
             Bitmap bm = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
             layers.setBounds(0, 0, w, h);
@@ -469,7 +470,7 @@ public class MainActivity extends Activity {
                     bm = hw;
                 }
             }
-            return new BitmapDrawable(getResources(), bm);
+            return new BitmapDrawable(ctx.getResources(), bm);
         } catch (Throwable t) {
             return layers;
         }
@@ -486,7 +487,7 @@ public class MainActivity extends Activity {
     }
 
     private void showWallpaper(int i) {
-        getWindow().setBackgroundDrawable(background(WALLPAPERS[i], scale));
+        getWindow().setBackgroundDrawable(background(this, WALLPAPERS[i], scale));
     }
 
     // The wallpapers, each with a small dot of its colours. Moving through the list shows each one
@@ -805,16 +806,7 @@ public class MainActivity extends Activity {
             showAddMenu(-1);
             return;
         } else if (SETTINGS.equals(key)) {
-            // A box has no screen of its own to dim: its picture is the TV's, on the TV's remote. On NVIDIA
-            // Shield, Brightness also fell back to a Display & Sound page that's listed but missing there.
-            List<String> list = new ArrayList<>(Arrays.asList(SETTINGS_ITEMS));
-            if (isBox(this)) list.remove("Brightness");
-            final String[] items = list.toArray(new String[0]);
-            dropdown(tile(SETTINGS), items, which -> {
-                if ("Wallpaper".equals(items[which])) showWallpapers();
-                else if ("Brightness".equals(items[which])) openBrightness();
-                else openTvSettings();
-            });
+            startActivity(new Intent(this, SettingsActivity.class));
             return;
         } else if (isInput(key)) {
             openInput(key);
