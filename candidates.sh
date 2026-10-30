@@ -98,8 +98,8 @@ all=$(sh_tv pm list packages) || lost
 off=$(sh_tv pm list packages -d) || lost
 # Android erases the Wi-Fi networks an app saved when that app is turned off. Empty on Ethernet.
 # Without the "Wi-Fi is" line the saved list wasn't read, and a timed-out dump may have stopped before it.
-wifi=$(sh_tv "dumpsys wifi | grep -o -E 'cname=[^ ]*|^Wi-Fi is [a-z]+|DUMP TIMEOUT'") || wifi=
 wifi_unread=
+wifi=$(sh_tv "dumpsys wifi | grep -o -E 'cname=[^ ]*|^Wi-Fi is [a-z]+|DUMP TIMEOUT'") || wifi_unread=1
 printf '%s\n' "$wifi" | grep -q '^Wi-Fi is ' || wifi_unread=1
 ! printf '%s\n' "$wifi" | grep -q 'DUMP TIMEOUT' || wifi_unread=1
 wifi=$(printf '%s\n' "$wifi" | sed -n 's/^cname=//p' | sort -u)
@@ -238,7 +238,7 @@ echo "never $(n 2) | keep $(n 3) | safe $(n 4) | review $(awk 'NR==2{print $1}' 
 echo
 echo "safe = commonly preinstalled junk. review = unknown, so leave it on unless you know it."
 if [ -n "$wifi_unread" ]; then
-  echo "Couldn't read which app saved your Wi-Fi, so no app is marked for it. Turning that app off erases"
-  echo "the network: check with rule 5 in docs/debloat.md first. If this TV has no Wi-Fi, ignore this."
+  echo "Couldn't read the whole Wi-Fi list, so the app that saved your Wi-Fi may not be marked. Turning it off"
+  echo "erases the network: check with rule 5 in docs/debloat.md first. If this TV has no Wi-Fi, ignore this."
 fi
 echo "Before turning anything off, read docs/debloat.md and ask someone before every change."
