@@ -28,13 +28,20 @@ sh_tv() { adb -s "$TV" shell "$@" </dev/null | tr -d '\r'; } # adb would eat the
 bad=0
 home_unchecked=
 # Prints a result line. With --fix, runs the fix and checks again.
-check() { # name, test command, fix command
-  if eval "$2"; then echo "  ok    $1"; return; fi
-  if [ -n "$FIX" ] && eval "$3" >/dev/null 2>&1 && eval "$2"; then echo "  fixed $1"; return; fi
-  echo "  WRONG $1"; bad=$((bad + 1))
+# Test and fix are functions given the rest as arguments, never eval'd: names come from a file on the TV.
+check() { # name, test, fix, arguments
+  _name=$1 _test=$2 _fix=$3; shift 3
+  if "$_test" "$@"; then echo "  ok    $_name"; return; fi
+  if [ -n "$FIX" ] && "$_fix" "$@" >/dev/null 2>&1 && "$_test" "$@"; then echo "  fixed $_name"; return; fi
+  echo "  WRONG $_name"; bad=$((bad + 1))
 }
 is_off() { sh_tv pm list packages -d "$1" | grep -qx "package:$1"; }
+turn_off() { sh_tv pm disable-user --user 0 "$1"; }
 installed() { sh_tv pm list packages "$1" | grep -qx "package:$1"; }
+setting_is() { [ "$(sh_tv settings get "$1" "$2")" = "$3" ]; }
+put_setting() { sh_tv settings put "$1" "$2" "$3"; }
+config_is() { [ "$(sh_tv device_config get "$1" "$2")" = "$3" ]; }
+put_config() { sh_tv device_config put "$1" "$2" "$3"; }
 
 ME=com.ansub.tvhome/.MainActivity
 home() { sh_tv cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -1; }
@@ -77,12 +84,14 @@ home_opens_me() {
   done
   return 1
 }
+home_is_me() { home_opens_me "$(home)"; }
+make_me_home() { sh_tv cmd role add-role-holder --user 0 android.app.role.HOME com.ansub.tvhome; sh_tv cmd package set-home-activity "$ME"; }
 echo "Home screen"
 # The TV's own launchers first: while one is on, Home can't be fixed.
 # In the same argument as cat: Git Bash on Windows turns an argument that starts with / into a Windows path.
 turned_off=$(sh_tv "cat /data/local/tmp/tvhome-disabled.txt" 2>/dev/null | sort -u)
 for p in $turned_off; do
-  check "$p stays off" "is_off $p" "sh_tv pm disable-user --user 0 $p"
+  check "$p stays off" is_off turn_off "$p"
 done
 # On Google TV, install.sh keeps Google TV's home screen on unless GOOGLE_TV=1, so Home opening it is expected.
 LAUNCHERX=com.google.android.apps.tv.launcherx
@@ -102,8 +111,7 @@ elif [ "${winner%%/*}" != org.droidtv.homeintentresolver ] && [ "$winner" != "$M
   echo "  ok    Home opens Google TV's home screen (kept on, as install.sh said; GOOGLE_TV=1 turns it off)"
 else
   before_home=$bad
-  check "Home opens this home screen" 'home_opens_me "$(home)"' \
-    'sh_tv cmd role add-role-holder --user 0 android.app.role.HOME com.ansub.tvhome; sh_tv cmd package set-home-activity "$ME"'
+  check "Home opens this home screen" home_is_me make_me_home
   if [ -n "$FIX" ] && [ "${winner%%/*}" = org.droidtv.homeintentresolver ] && [ "$bad" -gt "$before_home" ]; then
     echo "If Home shows nothing, run undo.sh."
     sh_tv input keyevent KEYCODE_HOME >/dev/null 2>&1 || true
@@ -115,12 +123,12 @@ if [ -n "$LIST" ]; then
   grep -v '^[[:space:]]*#' "$LIST" | grep -v '^[[:space:]]*$' | while read -r kind a b c; do
     case "$kind" in
       off)
-        if installed "$a"; then check "$a stays off" "is_off $a" "sh_tv pm disable-user --user 0 $a"
+        if installed "$a"; then check "$a stays off" is_off turn_off "$a"
         else echo "  gone  $a (not installed)"; fi ;;
       global|secure|system)
-        check "$kind $a = $b" "[ \"\$(sh_tv settings get $kind $a)\" = \"$b\" ]" "sh_tv settings put $kind $a $b" ;;
+        check "$kind $a = $b" setting_is put_setting "$kind" "$a" "$b" ;;
       device_config)
-        check "$a/$b = $c" "[ \"\$(sh_tv device_config get $a $b)\" = \"$c\" ]" "sh_tv device_config put $a $b $c" ;;
+        check "$a/$b = $c" config_is put_config "$a" "$b" "$c" ;;
       *) echo "  ?     can't read: $kind $a $b $c" ;;
     esac
   done > "${TMPDIR:-/tmp}/tvcheck.$$" || true
