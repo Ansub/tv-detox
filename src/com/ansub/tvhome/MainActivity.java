@@ -116,12 +116,12 @@ public class MainActivity extends Activity {
     private static final String TCL_SHOW_WINDOW = "com.tcl.settings.SHOW_WINDOW";
 
     // Layout is designed at 1920x1080 and scaled to the TV's real UI size by px().
-    private static final int MARGIN = 96, GAP = 36, RADIUS = 26;
+    private static final int MARGIN = 96, GAP = 44, RADIUS = 26;
     // The focus lift: the tile grows, rises, brightens and rounds off a little, then settles.
     // Long enough to read as motion, short enough that a run of d-pad presses never feels behind.
     private static final int FOCUS_MS = 180, RADIUS_UP = 10;
     private static final Interpolator FOCUS_EASE = new DecelerateInterpolator(1.8f);
-    private static final int ROW1_TOP = 604, ROW_STEP = 224;
+    private static final int ROW1_TOP = 604, ROW_STEP = 240;
     private static final int GRID_MIN_TOP = 400; // more rows push the grid up, but not into the clock
     private static final int ICON_TOP = 76, ICON_BUTTON = 72, ICON_SIZE = 40, ICON_GAP = 12; // level with the date
 
@@ -622,7 +622,7 @@ public class MainActivity extends Activity {
         card.setTag(key);
 
         // Banner tiles show their name underneath when focused.
-        final TextView caption = banner == null ? null : text(px(24), Color.WHITE, regular);
+        final TextView caption = banner == null ? null : text(px(30), Color.WHITE, regular);
         if (caption != null) {
             caption.setText(label);
             caption.setGravity(Gravity.CENTER_HORIZONTAL);
@@ -632,6 +632,7 @@ public class MainActivity extends Activity {
         final boolean glass = banner == null;
         card.setOnFocusChangeListener((v, has) -> {
             if (has) focusedKey = key;
+            focusOutline((FrameLayout) v, has);
             lift(v, bg, has, glass ? 0x13FFFFFF : 0xFF1E1A1C, glass ? 0x38FFFFFF : 0xFF1E1A1C,
                     px(RADIUS), px(RADIUS + RADIUS_UP));
             if (caption != null) {
@@ -688,11 +689,27 @@ public class MainActivity extends Activity {
         wrap.addView(card, new FrameLayout.LayoutParams(w, h));
         if (caption != null) {
             FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(w, -2);
-            cp.topMargin = h + px(22);
+            cp.topMargin = h + px(28);
             wrap.addView(caption, cp);
         }
         parent.addView(wrap, at(x, y, w, -2));
         tiles.add(card);
+    }
+
+    private void focusOutline(FrameLayout card, boolean focused) {
+        if (!focused) { card.setForeground(null); return; }
+        // The dark keyline keeps the pearl rim readable on white and dark banners.
+        GradientDrawable edge = new GradientDrawable();
+        edge.setColor(Color.TRANSPARENT);
+        edge.setCornerRadius(px(RADIUS + RADIUS_UP));
+        edge.setStroke(px(8), 0x99000000);
+        GradientDrawable rim = new GradientDrawable();
+        rim.setColor(Color.TRANSPARENT);
+        rim.setCornerRadius(px(RADIUS + RADIUS_UP - 2));
+        rim.setStroke(px(4), 0xFFF0F0EA);
+        LayerDrawable outline = new LayerDrawable(new Drawable[] {edge, rim});
+        outline.setLayerInset(1, px(2), px(2), px(2), px(2));
+        card.setForeground(outline);
     }
 
     // The focus lift: the view grows and rises while its background fades and rounds off. A new
@@ -701,7 +718,7 @@ public class MainActivity extends Activity {
     private void lift(View v, GradientDrawable bg, boolean has, int restColor, int focusColor,
                       int restRadius, int focusRadius) {
         v.animate().cancel();
-        v.animate().scaleX(has ? 1.1f : 1f).scaleY(has ? 1.1f : 1f).translationZ(has ? px(26) : 0)
+        v.animate().scaleX(has ? 1.25f : 1f).scaleY(has ? 1.25f : 1f).translationZ(has ? px(26) : 0)
                 .setDuration(FOCUS_MS).setInterpolator(FOCUS_EASE).withLayer().start();
         tween(v, bg, has, restColor, focusColor, restRadius, focusRadius);
     }
@@ -1390,7 +1407,7 @@ public class MainActivity extends Activity {
             if (!down) {
                 movingKey = null;
                 longPressed = false;
-                ((FrameLayout) tile(key)).setForeground(null);
+                focusOutline((FrameLayout) tile(key), tile(key).hasFocus());
                 moveHint.setVisibility(View.GONE);
                 saveRow();
                 refreshApps();
