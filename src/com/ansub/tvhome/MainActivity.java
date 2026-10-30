@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -130,6 +131,8 @@ public class MainActivity extends Activity {
     // Android TV 11 and later (Google TV too) has no Display page, but its "Display & Sound" page holds Picture.
     private static final String[] TV_DISPLAY_SOUND = {"com.android.tv.settings",
             "com.android.tv.settings.device.displaysound.DisplaySoundActivity"};
+    private static final ComponentName ONEPLUS_PICTURE = new ComponentName("com.android.tv.settings",
+            "com.android.tv.settings.partnercustomizer.picture.PictureActivity");
     // Wallpapers, saved by name: a gradient top to bottom, then a glow from the top left and one from
     // the bottom right. Dark ones first, then bright ones that get darker towards the bottom, so the
     // white labels stay easy to read. Only colours, no images, so every one costs the same as Dusk,
@@ -919,7 +922,14 @@ public class MainActivity extends Activity {
                 all.add(new Intent("com.google.android.intent.action.CONNECT_INPUT")); // Android TV's pairing screen
                 break;
             case "sound": all.add(new Intent(Settings.ACTION_SOUND_SETTINGS)); break;
-            case "picture": all.add(new Intent(Settings.ACTION_DISPLAY_SETTINGS)); break;
+            case "picture":
+                Intent picture = new Intent(Settings.ACTION_DISPLAY_SETTINGS);
+                ComponentName target = picture.resolveActivity(getPackageManager());
+                // OnePlus's picture screen reads "from" from the extras and crashes when there are none.
+                // Only that screen gets it, so other TVs open exactly as before.
+                if (target != null && ONEPLUS_PICTURE.equals(target)) picture.setComponent(target).putExtra("from", "tvhome");
+                all.add(picture);
+                break;
         }
         PackageManager pm = getPackageManager();
         List<Intent> out = new ArrayList<>();
