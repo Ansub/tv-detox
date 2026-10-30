@@ -515,7 +515,7 @@ Use the remote. Hold **OK** on an app (or press **Menu**) to:
 - **Uninstall** it, for apps you installed yourself. The TV asks you to confirm first.
 - **App info**, for apps that came with the TV. They can't be uninstalled, but from there you can turn them off.
 
-To add an app, pick the **Add app** tile in the bottom row. Add as many apps as you like: they wrap into rows of six, and the page scrolls once there are more than twelve. Your changes are kept until you run `install.sh` with a new app list.
+To add an app, pick the **Add app** tile in the bottom row. Add as many apps as you like: they wrap into rows of six, and the page scrolls once they don't all fit (more than twelve apps, or a second row of HDMI inputs). While it scrolls, the clock and the icons beside it stay at the top and the tiles slide under them. A small arrow at the bottom shows there's more below. Your changes are kept until you run `install.sh` with a new app list.
 
 HDMI tiles work the same way. Hold **OK** on one to **Rename** it — TV, PlayStation, Xbox, Switch, Laptop, PC, Blu-ray, Soundbar — or choose **Type a name…** to enter your own with the TV’s keyboard. You can also **Remove** it from the home screen. A removed input comes back by holding **OK** on the **Add app** tile. This only changes this home screen; the TV's own input names stay as they are.
 

@@ -93,7 +93,7 @@ public class MainActivity extends Activity {
     private static final String ADD = "add";
     private static final String[] EDIT_ITEMS = {"Move", "Replace", "Remove from home", "Uninstall"};
     private static final String[] EDIT_ITEMS_SYSTEM = {"Move", "Replace", "Remove from home", "App info"};
-    private static final int PER_ROW = 6, MAX_INPUTS = 4;
+    private static final int PER_ROW = 6, MAX_INPUTS = 6;
 
     // Settings shortcuts: name, label, icon. Tile keys are QUICK + name.
     private static final String QUICK = "quick:";
@@ -122,6 +122,8 @@ public class MainActivity extends Activity {
     private static final int FOCUS_MS = 180, RADIUS_UP = 10;
     private static final Interpolator FOCUS_EASE = new DecelerateInterpolator(1.8f);
     private static final int ROW1_TOP = 604, ROW_STEP = 224;
+    // The clock bar at the top stays put; the tiles scroll underneath it, below this line.
+    private static final int HEADER = 320;
     private static final int GRID_MIN_TOP = 400; // more rows push the grid up, but not into the clock
     private static final int ICON_TOP = 76, ICON_BUTTON = 72, ICON_SIZE = 40, ICON_GAP = 12; // level with the date
 
@@ -157,6 +159,11 @@ public class MainActivity extends Activity {
     private static Typeface regular, semibold;
 
     private FrameLayout root; // the page, inside a vertical scroller
+    private ScrollView scroller;
+    private FrameLayout header; // the clock, the date and the icons by it: they don't scroll
+    private FrameLayout moreBelow; // the scroll hint at the bottom
+    private View shade; // the shadow under the clock bar, once the tiles have scrolled under it
+    private boolean moreShown, shadeShown;
     private int tileW, tileH, gridTop; // app grid geometry, set by buildTiles
     private final List<View> tiles = new ArrayList<>();
     private final Map<View, ValueAnimator> lifts = new WeakHashMap<>(); // a running focus fade per tile
@@ -202,11 +209,20 @@ public class MainActivity extends Activity {
         scale = getResources().getDisplayMetrics().widthPixels / 1920f;
         showWallpaper(wallpaper());
 
-        ScrollView scroller = new ScrollView(this);
+        // ScrollView only brings a focused tile to the very edge, and the focus lift then grows it past
+        // the screen; keepInView scrolls instead, smoothly and with a margin, so a row below the fold
+        // (the inputs' second row, or a third row of apps) shows in full.
+        scroller = new ScrollView(this) {
+            @Override protected int computeScrollDeltaToGetChildRectOnScreen(android.graphics.Rect rect) {
+                return 0;
+            }
+        };
         scroller.setFillViewport(true);
         scroller.setVerticalScrollBarEnabled(false);
         scroller.setOverScrollMode(View.OVER_SCROLL_NEVER);
         scroller.setClipChildren(false);
+        scroller.setPadding(0, px(HEADER), 0, 0);
+        scroller.setClipToPadding(true);
         root = new FrameLayout(this);
         root.setClipChildren(false);
         scroller.addView(root, new FrameLayout.LayoutParams(-1, -2));
@@ -229,14 +245,45 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(-2, -2);
         tp.topMargin = px(-20); // pull the big digits up under the date
         clock.addView(time, tp);
-        root.addView(clock, at(px(MARGIN), px(92), -2, -2));
+        header = new FrameLayout(this);
+        header.setClipChildren(false);
+        header.addView(clock, at(px(MARGIN), px(92), -2, -2));
 
         moveHint = text(px(24), 0xA8FFFFFF, regular);
         moveHint.setText(Strings.t("Use the arrows to move it, then press OK"));
         moveHint.setVisibility(View.GONE);
-        root.addView(moveHint, at(px(MARGIN), px(ROW1_TOP - 64), -2, -2));
+        root.addView(moveHint, at(px(MARGIN), px(ROW1_TOP - 64 - HEADER), -2, -2));
 
-        setContentView(scroller);
+        // The page scrolls once the tiles don't all fit: a soft fade and a small arrow at the bottom say
+        // there's more below, and go once you've reached it. They take no focus and draw nothing else.
+        FrameLayout page = new FrameLayout(this);
+        page.setClipChildren(false);
+        page.addView(scroller, new FrameLayout.LayoutParams(-1, -1));
+        page.addView(header, new FrameLayout.LayoutParams(-1, px(HEADER)));
+        shade = new View(this);
+        shade.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[] {0x73000000, 0x00000000}));
+        shade.setAlpha(0f);
+        page.addView(shade, at(0, px(HEADER), -1, px(56)));
+        moreBelow = new FrameLayout(this);
+        moreBelow.setBackground(new GradientDrawable(GradientDrawable.Orientation.BOTTOM_TOP,
+                new int[] {0x99000000, 0x00000000}));
+        ImageView arrow = new ImageView(this);
+        arrow.setImageDrawable(new LineIcon(LineIcon.CHEVRON_DOWN));
+        arrow.setAlpha(0.6f);
+        FrameLayout.LayoutParams ap = new FrameLayout.LayoutParams(px(40), px(40), Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
+        ap.bottomMargin = px(14);
+        moreBelow.addView(arrow, ap);
+        moreBelow.setAlpha(0f);
+        moreBelow.setFocusable(false);
+        page.addView(moreBelow, new FrameLayout.LayoutParams(-1, px(110), Gravity.BOTTOM));
+        scroller.getViewTreeObserver().addOnScrollChangedListener(this::refreshMoreBelow);
+        scroller.getViewTreeObserver().addOnGlobalLayoutListener(this::refreshMoreBelow);
+        scroller.getViewTreeObserver().addOnGlobalFocusChangeListener((was, now) -> {
+            if (now != null && now.getParent() instanceof View && root.indexOfChild((View) now.getParent()) >= 0)
+                scroller.post(() -> keepInView(now));
+        });
+        setContentView(page);
 
         IntentFilter f = new IntentFilter();
         f.addAction(Intent.ACTION_PACKAGE_ADDED);
@@ -495,6 +542,33 @@ public class MainActivity extends Activity {
         return g;
     }
 
+    // The whole tile and a margin in view; the top row of apps (and the icons by the clock) also
+    // brings the clock back into view.
+    private void keepInView(View tile) {
+        View wrap = (View) tile.getParent();
+        int pad = px(MARGIN);
+        int top = wrap.getTop() - pad, bottom = wrap.getBottom() + pad, y = scroller.getScrollY();
+        int h = scroller.getHeight() - scroller.getPaddingTop(); // the part below the clock bar
+        if (wrap.getTop() <= gridTop) scroller.smoothScrollTo(0, 0);
+        else if (bottom > y + h) scroller.smoothScrollTo(0, bottom - h);
+        else if (top < y) scroller.smoothScrollTo(0, Math.max(0, top));
+    }
+
+    // Fades the scroll hint in while there's more below, and the shadow under the clock bar while
+    // tiles have scrolled under it.
+    private void refreshMoreBelow() {
+        if (moreBelow == null) return;
+        boolean more = scroller.canScrollVertically(1), under = scroller.canScrollVertically(-1);
+        if (more != moreShown) {
+            moreShown = more;
+            moreBelow.animate().alpha(more ? 1f : 0f).setDuration(FOCUS_MS).start();
+        }
+        if (under != shadeShown) {
+            shadeShown = under;
+            shade.animate().alpha(under ? 1f : 0f).setDuration(FOCUS_MS).start();
+        }
+    }
+
     private void buildTiles() {
         // While tiles are swapped out, removing the focused one would hand focus down the row (and
         // overwrite focusedKey), so hold focus off until the new tiles are in.
@@ -518,15 +592,21 @@ public class MainActivity extends Activity {
         tileH = h;
 
         List<String> apps = appList(pm);
+        // Bottom tiles: Play Store, the inputs, Settings and Add app. More than six wrap onto a second
+        // row, like the apps, so a TV with four HDMI ports and an antenna shows them all.
+        boolean store = !apps.contains(PLAY_STORE) && launchIntent(pm, PLAY_STORE) != null;
+        List<TvInputInfo> inputs = hdmiInputs();
+        int bottomTiles = (store ? 1 : 0) + inputs.size() + 2;
+        int bottomRows = (bottomTiles + PER_ROW - 1) / PER_ROW;
         // Apps fill rows of six. With more rows the grid starts higher, so up to two rows of apps and
         // the bottom row still fit on screen; past that the page scrolls.
         int launchable = 0;
         for (String pkg : apps) if (launchIntent(pm, pkg) != null) launchable++;
         int rows = Math.max(1, (launchable + PER_ROW - 1) / PER_ROW);
-        gridTop = Math.max(px(GRID_MIN_TOP), px(ROW1_TOP) - (rows - 1) * px(ROW_STEP));
+        gridTop = Math.max(px(GRID_MIN_TOP), px(ROW1_TOP) - (rows + bottomRows - 2) * px(ROW_STEP)) - px(HEADER);
         int bottomTop = gridTop + rows * px(ROW_STEP);
         ((FrameLayout.LayoutParams) moveHint.getLayoutParams()).topMargin = gridTop - px(64);
-        root.setMinimumHeight(bottomTop + h + px(MARGIN));
+        root.setMinimumHeight(bottomTop + (bottomRows - 1) * px(ROW_STEP) + h + px(MARGIN));
 
         for (String pkg : apps) {
             Intent li = launchIntent(pm, pkg);
@@ -546,18 +626,18 @@ public class MainActivity extends Activity {
             addTile(root, pkg, label, banner, null, icon, gridX(i), gridY(i), w, h);
         }
 
-        // Bottom row: Play Store, HDMI inputs, Settings and Add app, six at most.
+        // Bottom rows: Play Store, the inputs (the antenna first, then HDMI), Settings and Add app.
         int col = 0;
-        boolean store = !apps.contains(PLAY_STORE) && launchIntent(pm, PLAY_STORE) != null;
-        List<TvInputInfo> inputs = hdmiInputs();
-        int room = PER_ROW - 2 - (store ? 1 : 0);
-        if (inputs.size() > room) inputs = inputs.subList(0, room);
         if (store)
-            addTile(root, PLAY_STORE, "Play Store", null, LineIcon.PLAY, null, m + col++ * (w + g), bottomTop, w, h);
+            addTile(root, PLAY_STORE, "Play Store", null, LineIcon.PLAY, null, m + col % PER_ROW * (w + g),
+                    bottomTop + col++ / PER_ROW * px(ROW_STEP), w, h);
         for (TvInputInfo in : inputs)
-            addTile(root, in.getId(), inputLabel(in), null, LineIcon.HDMI, null, m + col++ * (w + g), bottomTop, w, h);
-        addTile(root, SETTINGS, Strings.t("Settings"), null, LineIcon.SETTINGS, null, m + col++ * (w + g), bottomTop, w, h);
-        addTile(root, ADD, Strings.t("Add app"), null, LineIcon.PLUS, null, m + col * (w + g), bottomTop, w, h);
+            addTile(root, in.getId(), inputLabel(in), null, in.getType() == TvInputInfo.TYPE_TUNER ? LineIcon.PICTURE
+                    : LineIcon.HDMI, null, m + col % PER_ROW * (w + g), bottomTop + col++ / PER_ROW * px(ROW_STEP), w, h);
+        addTile(root, SETTINGS, Strings.t("Settings"), null, LineIcon.SETTINGS, null, m + col % PER_ROW * (w + g),
+                bottomTop + col++ / PER_ROW * px(ROW_STEP), w, h);
+        addTile(root, ADD, Strings.t("Add app"), null, LineIcon.PLUS, null, m + col % PER_ROW * (w + g),
+                bottomTop + col / PER_ROW * px(ROW_STEP), w, h);
 
         // Plain icons at the top right, level with the date: any settings shortcuts picked, then the
         // network icon. Added last, so the first app keeps first focus; Up from the apps reaches them.
@@ -764,7 +844,7 @@ public class MainActivity extends Activity {
         FrameLayout wrap = new FrameLayout(this);
         wrap.setClipChildren(false);
         wrap.addView(card, new FrameLayout.LayoutParams(b, b));
-        root.addView(wrap, at(x, px(ICON_TOP), b, b));
+        header.addView(wrap, at(x, px(ICON_TOP), b, b));
         tiles.add(card);
         return iv;
     }
@@ -815,7 +895,10 @@ public class MainActivity extends Activity {
     // Google TV's input player, that goes first, because some Google TVs ship com.android.tv as a stub
     // that starts fine but only says "Hello World!" (issue #5).
     private void openInput(String id) {
-        Intent view = new Intent(Intent.ACTION_VIEW, TvContract.buildChannelUriForPassthroughInput(id));
+        TvInputInfo in = inputById(id);
+        boolean tuner = in != null && in.getType() == TvInputInfo.TYPE_TUNER;
+        Intent view = new Intent(Intent.ACTION_VIEW, tuner ? TvContract.buildChannelsUriForInput(id)
+                : TvContract.buildChannelUriForPassthroughInput(id));
         List<Intent> tries = new ArrayList<>();
         ResolveInfo def = getPackageManager().resolveActivity(view, PackageManager.MATCH_DEFAULT_ONLY);
         if (def != null && def.activityInfo != null && INPUT_PLAYER.equals(def.activityInfo.packageName))
@@ -1415,9 +1498,13 @@ public class MainActivity extends Activity {
 
     // HDMI inputs are what a home screen shows. install.sh's FAKE_INPUT=1 takes every TV input
     // instead, so the tiles and their menus can be tested on an emulator that has no HDMI of its own.
-    private boolean countsAsInput(TvInputInfo in) {
+    // The TV's own antenna or cable tuner counts too: a tuner from the same system service as the HDMI
+    // inputs (tuners), not an app's internet channels like TCL Channel.
+    private boolean countsAsInput(TvInputInfo in, Set<String> tuners) {
         boolean fake = "1".equals(prefs().getString(PREF_FAKE_INPUTS, null));
-        return (fake || in.getType() == TvInputInfo.TYPE_HDMI) && in.getParentId() == null && !in.isHidden(this);
+        boolean type = fake || in.getType() == TvInputInfo.TYPE_HDMI
+                || (in.getType() == TvInputInfo.TYPE_TUNER && tuners.contains(in.getServiceInfo().packageName));
+        return type && in.getParentId() == null && !in.isHidden(this);
     }
 
     // Every HDMI input the TV reports that isn't switched off in its own settings, hidden or not.
@@ -1425,8 +1512,14 @@ public class MainActivity extends Activity {
         List<TvInputInfo> out = new ArrayList<>();
         TvInputManager tim = (TvInputManager) getSystemService(Context.TV_INPUT_SERVICE);
         if (tim == null) return out;
-        for (TvInputInfo in : tim.getTvInputList()) if (countsAsInput(in)) out.add(in);
-        Collections.sort(out, (a, b) -> a.getId().compareTo(b.getId()));
+        List<TvInputInfo> all = tim.getTvInputList();
+        Set<String> tuners = new HashSet<>(); // the services that also give the TV's HDMI ports
+        for (TvInputInfo in : all) if (in.isPassthroughInput()) tuners.add(in.getServiceInfo().packageName);
+        for (TvInputInfo in : all) if (countsAsInput(in, tuners)) out.add(in);
+        // The antenna first, then the inputs in the TV's order.
+        Collections.sort(out, (a, b) -> a.getType() != b.getType() && (a.getType() == TvInputInfo.TYPE_TUNER
+                || b.getType() == TvInputInfo.TYPE_TUNER) ? (a.getType() == TvInputInfo.TYPE_TUNER ? -1 : 1)
+                : a.getId().compareTo(b.getId()));
         return out;
     }
 
