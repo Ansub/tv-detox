@@ -104,6 +104,36 @@ Some annoyances are the TV's own behaviour, not an app. A TV that opens Live TV 
 at boot is set up that way in its own settings, usually under the system or power menu. No
 package to disable. Set it on the remote instead.
 
+## After the cleanup: screensaver and sleep
+
+![The Settings screen, on its Screensaver & sleep page](settings-screen.png)
+
+![Starfield, the screensaver that comes with the home screen](starfield.png)
+
+Turning off the screensaver you had, like Google TV's `dreamx` or Android TV's Ambient Mode
+(`com.google.android.backdrop`), leaves the TV with a different one or none. Pick what replaces
+it on the home screen: **Settings** tile, then **Screensaver & sleep**.
+
+- **Screensaver** lists every screensaver on the TV, plus Off. **Preview screensaver** shows it
+  straight away.
+- **Starfield** comes with the home screen: stars drifting slowly towards you, with a small clock
+  that moves every minute. It only runs while it shows, so it costs nothing the rest of the time,
+  and it can replace Ambient Mode or Google TV's screensaver once they're off.
+- **Starts after** and **Sleeps after** set the two timers. Sleep can't be set before the
+  screensaver starts, so the screensaver always gets its turn.
+- `install.sh` grants the two permissions these need, over adb. Without them the page only shows
+  the current values; run `install.sh` again to fix that.
+
+The other pages show the network and paired Bluetooth devices, the picture and sound, and the
+device's memory and storage, with buttons to the TV's own screens for what an app can't change.
+
+**TVs and boxes.** A TV has its own screen, speakers and HDMI inputs; a box like NVIDIA Shield,
+Chromecast or a Mi Box plugs into one and has none of them. The Settings screen tells them apart
+by those inputs. Only a TV gets **Picture & brightness**: a box's picture is the TV's, set with the
+TV's remote. On NVIDIA Shield, resolution, HDR and audio are under TV settings, **Device
+Preferences**, **Display & Sound**. Android TV's own Display & Sound page is listed there too, but
+it's missing and crashes if started.
+
 ## Reference
 
 ### Never turn off
@@ -123,6 +153,7 @@ package to disable. Set it on the remote instead.
 | TCL basics | `com.tcl.tvinput` (HDMI and tuner), `com.tcl.tv` (Live TV, also the screen that shows HDMI), `com.tcl.suspension` (input picker), `com.tcl.providers.config`, `com.tcl.useragreement` |
 | Philips basics | `org.droidtv.` prefix: `homeintentresolver`, `GlobalKey`, `playtv`, `hdmiservice`, `channels`, `tvsystemui`, `tvpowermanagerservice`, `tv.tptvservice` ([TV Slim never-disable list](https://tvslim.app/packages/)); `lkb`, `xtv`, `settings`, `menudataapp`, `eum`, `aurora` ([tvdebloat DO NOT DISABLE block](https://tvdebloat.com/data/sources/philips-50pus8517.txt); removing `eum` or `aurora` leaves persistent `xtv` retrying) |
 | MediaTek basics | `com.mediatek.wwtv.tvcenter` (Live TV, also the screen that shows HDMI), `com.mediatek.tvinput` (inputs), `com.mediatek.tv.service` (TV service and the remote's keys), `com.mediatek.wwtv.setupwizard` |
+| NVIDIA Shield basics | `com.nvidia.shieldservice`, `com.nvidia.blakepairing` and `com.nvidia.shield.remote.server` (the remote), `com.nvidia.bluetooth.ShieldBluetoothManager`, `com.nvidia.irtuner` (IR blaster), `com.nvidia.nvaudiosvc` (audio). Android keeps them running |
 | `com.google.android.apps.mediashell` | casting, if you cast |
 | anything flagged `PERSISTENT` | it will not stay off |
 | whatever saved your Wi-Fi | see rule 5 |
@@ -134,14 +165,16 @@ Ads and sponsored rows, unused Google apps, vendor filler and serial port relics
 | package | what it is |
 | --- | --- |
 | `com.google.android.tvrecommendations` | Google TV sponsored row |
-| `com.google.android.backdrop` | Google TV backdrop ads |
+| `com.google.android.backdrop` | Google TV backdrop ads. On Android TV it's also the Ambient Mode screensaver (about 150 MB on a Shield): pick another screensaver first |
 | `com.google.android.videos`, `com.google.android.youtube.tvmusic`, `com.google.android.play.games` | Google apps few TVs use |
 | `com.google.android.feedback` | Google feedback |
 | `com.tcl.waterfall.overseas`, `com.tcl.esticker` | TCL content feed and stickers |
 | `com.tcl.dashboard`, `com.tcl.messagebox` | TCL panels and popups |
 | `com.tcl.copydatatotv`, `com.tcl.audioplayer`, `com.tcl.imageplayer`, `com.tcl.videoplayer` | TCL media helpers |
 | `com.tcl.usercenter`, `com.tcl.keyhelp` | TCL account and help |
-| `com.android.printspooler`, `com.android.htmlviewer` | Android spare parts |
+| `com.nvidia.stats`, `com.nvidia.feedback` | NVIDIA usage stats and feedback |
+| `com.nvidia.shield.welcome`, `com.nvidia.diagtools`, `com.nvidia.developerwidget` | NVIDIA welcome tour, diagnostics and developer widget |
+| `com.android.printspooler`, `com.android.htmlviewer`, `com.android.gallery3d` | Android spare parts: printing, HTML viewer, photo gallery |
 
 ### Depends on you
 
@@ -155,7 +188,8 @@ Turn these off only if you do not use the feature:
 | `com.google.android.marvin.talkback` | TalkBack screen reader |
 | `com.google.android.tv.remote.service` | remote control from your phone |
 | `com.google.android.tts` | text to speech |
-| `com.android.dreams.basic`, `com.google.android.apps.tv.dreamx` | the screensaver. Keep it on an OLED TV, it prevents burn-in |
+| `com.nvidia.tegrazone3` | GeForce NOW and NVIDIA's games, on a Shield |
+| `com.android.dreams.basic`, `com.google.android.apps.tv.dreamx` | the screensaver. Keep one on an OLED TV, it prevents burn-in; pick which in **Settings**, **Screensaver & sleep** |
 
 Vendors rename and add to these lists, so treat them as strong hints, not gospel. When in
 doubt, leave it on: a slow TV is better than a TV you cannot use.

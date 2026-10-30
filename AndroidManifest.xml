@@ -28,7 +28,19 @@
         <package android:name="com.google.android.tv.inputplayer" />
         <!-- Google TV's own home screen, which HomeButton opens when Back is held. -->
         <package android:name="com.google.android.apps.tv.launcherx" />
+        <!-- The Settings screen: the TV's screensavers, System UI's screensaver preview, TV settings. -->
+        <intent><action android:name="android.service.dreams.DreamService" /></intent>
+        <package android:name="com.android.systemui" />
+        <intent><action android:name="android.settings.SETTINGS" /></intent>
     </queries>
+    <!-- The Settings screen. WRITE_SETTINGS and WRITE_SECURE_SETTINGS let it change the screensaver and
+         sleep timers; install.sh grants them over adb, and the TV never asks. Without them the page
+         only shows the current values. -->
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+    <!-- Only to list paired Bluetooth devices there. On Android 12+ install.sh grants it. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <!-- Lets "Uninstall" in the app menu open Android's uninstall prompt. -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <uses-feature android:name="android.software.leanback" android:required="false" />
@@ -52,6 +64,19 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".SettingsActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:screenOrientation="landscape"
+            android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize|screenLayout|uiMode" />
+        <!-- Starfield, a screensaver that comes with the home screen. It only runs while it shows. -->
+        <service android:name=".StarfieldDream" android:label="Starfield" android:exported="true"
+            android:permission="android.permission.BIND_DREAM_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.dreams.DreamService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
         <!-- Opt-in: makes Home open this home screen where the TV's own has to stay on (Google TV). -->
         <service android:name=".HomeButton" android:label="Home button" android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">

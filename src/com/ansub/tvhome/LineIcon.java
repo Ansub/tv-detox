@@ -30,6 +30,11 @@ final class LineIcon extends Drawable {
             1, 80, 165, 1, 40, 165, 2, 0, 85, 60, 1, 85, 100, 0, 120, 60, 1, 120, 100, 0, 155, 60, 1, 155, 100};
     static final int[] PICTURE ={0, 30, 50, 1, 210, 50, 1, 210, 165, 1, 30, 165, 2, 0, 120, 165, 1, 120, 200,
             0, 80, 200, 1, 160, 200};
+    // For the Settings screen: screensaver and sleep (a power symbol), device info, wallpaper.
+    static final int[] POWER = {4, 120, 130, 78, -60, 300, 0, 120, 35, 1, 120, 115};
+    static final int[] INFO = {3, 120, 120, 88, 0, 120, 108, 1, 120, 168, 0, 120, 74, 1, 120, 76};
+    static final int[] FRAME = {0, 35, 55, 1, 205, 55, 1, 205, 185, 1, 35, 185, 2,
+            0, 35, 160, 1, 95, 108, 1, 140, 148, 1, 165, 128, 1, 205, 160};
 
     private final int[] ops;
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);

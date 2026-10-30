@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- HomeButton: only sees when Google TV's home screen opens. It can't see keys or read what's on screen. -->
+<!-- HomeButton: sees when Google TV's home screen opens, and remote keys so the settings (gear) and app
+     buttons still work once that home screen is off. It acts on those keys only, and can't read what's on screen. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFlags="flagRequestFilterKeyEvents"
+    android:canRequestFilterKeyEvents="true"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:canRetrieveWindowContent="false"
     android:packageNames="com.google.android.apps.tv.launcherx"
