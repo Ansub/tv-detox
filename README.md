@@ -512,8 +512,8 @@ Use the remote. Hold **OK** on an app (or press **Menu**) to:
 - **Move** it: use the arrows to slide it to a new spot, then press **OK** to finish.
 - **Replace** it: pick another app to take its place.
 - **Remove** it from the home screen. The app stays installed, and you can add it back any time.
+- **App info**, for every app: force stop it, clear its cache or check its permissions. Apps that came with the TV can't be uninstalled, but from there you can turn them off.
 - **Uninstall** it, for apps you installed yourself. The TV asks you to confirm first.
-- **App info**, for apps that came with the TV. They can't be uninstalled, but from there you can turn them off.
 
 To add an app, pick the **Add app** tile in the bottom row. Add as many apps as you like: they wrap into rows of six, and the page scrolls once there are more than twelve. Your changes are kept until you run `install.sh` with a new app list.
 
