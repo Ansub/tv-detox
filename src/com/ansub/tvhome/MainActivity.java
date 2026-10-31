@@ -117,9 +117,9 @@ public class MainActivity extends Activity {
 
     // Layout is designed at 1920x1080 and scaled to the TV's real UI size by px().
     private static final int MARGIN = 96, GAP = 44, RADIUS = 26;
-    // The focus lift: the tile grows, rises, brightens and rounds off a little, then settles.
+    // The focus lift: the tile grows, rises and brightens, then settles.
     // Long enough to read as motion, short enough that a run of d-pad presses never feels behind.
-    private static final int FOCUS_MS = 180, RADIUS_UP = 10;
+    private static final int FOCUS_MS = 180;
     private static final Interpolator FOCUS_EASE = new DecelerateInterpolator(1.8f);
     private static final int ROW1_TOP = 604, ROW_STEP = 240;
     private static final int GRID_MIN_TOP = 400; // more rows push the grid up, but not into the clock
@@ -634,7 +634,7 @@ public class MainActivity extends Activity {
             if (has) focusedKey = key;
             focusOutline((FrameLayout) v, has);
             lift(v, bg, has, glass ? 0x13FFFFFF : 0xFF1E1A1C, glass ? 0x38FFFFFF : 0xFF1E1A1C,
-                    px(RADIUS), px(RADIUS + RADIUS_UP));
+                    px(RADIUS), px(RADIUS));
             if (caption != null) {
                 caption.animate().cancel();
                 if (has) {
@@ -698,21 +698,21 @@ public class MainActivity extends Activity {
 
     private void focusOutline(FrameLayout card, boolean focused) {
         if (!focused) { card.setForeground(null); return; }
-        // The dark keyline keeps the pearl rim readable on white and dark banners.
+        // Stroke paths are inset by half their width; keep both corners concentric with the tile.
         GradientDrawable edge = new GradientDrawable();
         edge.setColor(Color.TRANSPARENT);
-        edge.setCornerRadius(px(RADIUS + RADIUS_UP));
+        edge.setCornerRadius(px(RADIUS) - px(8) / 2f);
         edge.setStroke(px(8), 0x99000000);
         GradientDrawable rim = new GradientDrawable();
         rim.setColor(Color.TRANSPARENT);
-        rim.setCornerRadius(px(RADIUS + RADIUS_UP - 2));
+        rim.setCornerRadius(px(RADIUS) - px(2) - px(4) / 2f);
         rim.setStroke(px(4), 0xFFF0F0EA);
         LayerDrawable outline = new LayerDrawable(new Drawable[] {edge, rim});
         outline.setLayerInset(1, px(2), px(2), px(2), px(2));
         card.setForeground(outline);
     }
 
-    // The focus lift: the view grows and rises while its background fades and rounds off. A new
+    // The focus lift: the view grows and rises while its background fades. A new
     // change cancels the fade the view was running, so a fast run of d-pad presses only ever shows
     // the tile in front and the one it just left mid-move.
     private void lift(View v, GradientDrawable bg, boolean has, int restColor, int focusColor,
@@ -1374,7 +1374,7 @@ public class MainActivity extends Activity {
         if (card == null) return;
         movingKey = key;
         GradientDrawable outline = new GradientDrawable();
-        outline.setCornerRadius(px(RADIUS));
+        outline.setCornerRadius(px(RADIUS) - px(4) / 2f);
         outline.setStroke(px(4), Color.WHITE);
         ((FrameLayout) card).setForeground(outline);
         moveHint.setVisibility(View.VISIBLE);
