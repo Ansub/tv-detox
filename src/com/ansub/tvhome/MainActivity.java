@@ -91,7 +91,7 @@ public class MainActivity extends Activity {
     private static final String PLAY_STORE = "com.android.vending";
     private static final String SETTINGS = "settings";
     private static final String ADD = "add";
-    private static final String[] EDIT_ITEMS = {"Move", "Replace", "Remove from home", "Uninstall"};
+    private static final String[] EDIT_ITEMS = {"Move", "Replace", "Remove from home", "App info", "Uninstall"};
     private static final String[] EDIT_ITEMS_SYSTEM = {"Move", "Replace", "Remove from home", "App info"};
     private static final int PER_ROW = 6, MAX_INPUTS = 4;
 
@@ -1108,9 +1108,9 @@ public class MainActivity extends Activity {
 
     // Hold OK (or Menu) on a top-row app: move it, swap it for another, or take it off the home
     // screen. Removing only takes the tile away: the app stays installed and can be added back.
-    // Apps the user installed can also be uninstalled; Android asks to confirm, and the tile goes
-    // once the app is gone. Apps that came with the TV can't be, so they get App info instead,
-    // where Android offers to turn them off.
+    // Every app gets App info (force stop, clear cache, permissions; for apps that came with the TV
+    // Android offers to turn them off there). Apps the user installed can also be uninstalled;
+    // Android asks to confirm, and the tile goes once the app is gone.
     private void showEditMenu(final String key) {
         final int index = rowApps.indexOf(key);
         if (index < 0) return;
@@ -1118,9 +1118,9 @@ public class MainActivity extends Activity {
         dropdown(tile(key), user ? EDIT_ITEMS : EDIT_ITEMS_SYSTEM, which -> {
             if (which == 0) startMove(key);
             else if (which == 1) showAddMenu(index);
-            else if (which == 3) {
+            else if (which == 3 || which == 4) {
                 Uri pkg = Uri.parse("package:" + key);
-                try { startActivity(user ? new Intent(Intent.ACTION_DELETE, pkg)
+                try { startActivity(which == 4 ? new Intent(Intent.ACTION_DELETE, pkg)
                         : new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, pkg)); }
                 catch (Exception ignored) {}
             } else {
