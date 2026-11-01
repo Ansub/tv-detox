@@ -148,7 +148,7 @@ Menus differ a bit by brand. If you're stuck, ask Claude or Codex: *"I have a \<
 <summary><b>Which TVs does it work on?</b></summary>
 <br>
 
-Android TV 9 (a real TV), 11 and 12, and Google TV 14 (also a real TCL TV, see [TCL notes](#tcl-notes)). Every change is tested automatically on Android TV 9 and 11 emulators.
+Android TV 9 (a real TV), 11 and 12, Android TV 14 (a real Aiwa TV, see [Aiwa and KTC notes](#ktc-aiwa-notes)) and Google TV 14 (also a real TCL TV, see [TCL notes](#tcl-notes)). Every change is tested automatically on Android TV 9 and 11 emulators.
 
 </details>
 
@@ -386,6 +386,44 @@ Tested on a OnePlus TV E00 (QLED, Android TV 11 with Google TV's home screen, 2.
 - `com.mediatek.*`, `com.oneplus.tv.factory`, `com.oneplus.tv.remote`: the remote's buttons, the input key, the tuner and HDMI.
 
 **Remote buttons.** If you turned Google TV's home screen off, the **Guide** and **All apps** keys do nothing, because they open it. That's expected.
+
+</details>
+
+<a id="ktc-aiwa-notes"></a>
+<details>
+<summary><b>Aiwa and other KTC-made TVs: what worked, and what to keep</b></summary>
+<br>
+
+Tested on an Aiwa TV that reports itself as `KTC SMART TV` (Android TV 14, MediaTek, 913 MB of RAM, on Ethernet, connected on port 5555). The home screen was `com.google.android.tvlauncher`, not Google TV's `launcherx`, so `install.sh` offered to turn it off and the TV opened this home screen by itself. The TV was restarted once and started normally, with the home screen and every app turned off still as they were. We didn't take a clean before-and-after memory reading, so this note doesn't claim a speed-up.
+
+**Safe to turn off**, if you don't use them:
+
+| App | Package |
+|---|---|
+| Google TV sponsored row | `com.google.android.tvrecommendations` |
+| Google TV backdrop ads | `com.google.android.backdrop` |
+| Google TV, Play Movies | `com.google.android.videos` |
+| YouTube Music | `com.google.android.youtube.tvmusic` |
+| Play Games | `com.google.android.play.games` |
+| Google feedback | `com.google.android.feedback` |
+| HTML file viewer | `com.android.htmlviewer` |
+| Store demo | `fusion.android.tv.demo` |
+| ACR (measures what you watch, for ads) | `tv.anoki.acr.anokiacroptin` |
+| Pluto TV | `tv.pluto.android` |
+| Preinstalled games and browsers | `com.redbull.airrace`, `net.kidjo.app.android`, `com.seraphic.metaxplay`, `com.seraphic.openinet.pre` |
+
+**Keep these on:**
+
+- `com.mediatek.*`, `com.ktc.*` and `ktc.factorymenu.ui`: the TV service, the remote's keys, the HDMI and tuner input and the factory menu. `candidates.sh` marks them `never`.
+- `com.google.android.tungsten.setupwraith`: the setup app saved the Wi-Fi network, and turning it off erases it. `install.sh` leaves it on unless you answer for it.
+- **Streaming apps that come preinstalled in Brazil.** `candidates.sh` lists them as `review`, because it knows nothing about them. Keep the ones you use: Mercado Play (`com.mercadolibre.android.mplay_tv`), Globoplay (`com.globo.globotv`) and HBO Max (`com.wbd.stream`, `com.hbo.hbonow`). Pass their packages to `install.sh` to put them on the home screen.
+
+**Notes:**
+
+- **`com.cltv.fast` (FAST channels) turns itself back on.** We turned it off twice and something on the TV enabled it again, so it's left as it is. `check.sh --fix` would keep putting it back.
+- **The TV forgets the adb authorization after every restart.** Tick "Always allow" again on the TV each time you reconnect.
+- **The Play Store asked us to sign in again** after the cleanup (`AuthFailureError: User needs to (re)enter credentials` in the log, while the account was still listed). None of the apps above is part of signing in, and `com.google.android.gms` and `gsf` stayed on, so we can't tie it to the cleanup. Signing in to the Google account again fixed it. If you'd rather not type a long password with the remote, pair the Google TV or Android TV Remote app on your phone and use its keyboard.
+- `supports.sh` shows this TV as `KTC SMART TV`, not as Aiwa. Other Aiwa and KTC models may look the same, but only this one was tested.
 
 </details>
 
