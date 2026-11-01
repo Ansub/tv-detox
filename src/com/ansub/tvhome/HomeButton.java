@@ -20,6 +20,9 @@ import android.view.accessibility.AccessibilityEvent;
 public class HomeButton extends AccessibilityService {
     private static final ComponentName GOOGLE_TV_HOME = new ComponentName(
             "com.google.android.apps.tv.launcherx", "com.google.android.apps.tv.launcherx.home.HomeActivity");
+    // Some Google TVs (a TCL Q651G) turn HomeActivity off and use this one instead.
+    private static final ComponentName GOOGLE_TV_VANILLA_HOME = new ComponentName(
+            GOOGLE_TV_HOME.getPackageName(), "com.google.android.apps.tv.launcherx.home.VanillaModeHomeActivity");
     // Debounce duplicate events until the activity resumes.
     private static long lastOpened = -500;
 
@@ -27,7 +30,9 @@ public class HomeButton extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getEventType() != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
                 || !GOOGLE_TV_HOME.getPackageName().equals(String.valueOf(event.getPackageName()))
-                || !GOOGLE_TV_HOME.getClassName().equals(String.valueOf(event.getClassName())) || !setupDone()) return;
+                || !(GOOGLE_TV_HOME.getClassName().equals(String.valueOf(event.getClassName()))
+                        || GOOGLE_TV_VANILLA_HOME.getClassName().equals(String.valueOf(event.getClassName())))
+                || !setupDone()) return;
         SharedPreferences prefs = prefs(this);
         if (stayingOnGoogleTv(prefs)) return;
         long now = SystemClock.elapsedRealtime();
@@ -96,13 +101,14 @@ public class HomeButton extends AccessibilityService {
         // Keep the choice through process death and updates, but not a TV restart.
         if (!prefs.edit().putLong("google_tv_boot", bootTime())
                 .putInt("google_tv_boot_count", bootCount(c)).commit()) return false;
-        try {
-            c.startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-                    .setComponent(GOOGLE_TV_HOME).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            return true;
-        } catch (Exception e) {
-            prefs.edit().remove("google_tv_boot").remove("google_tv_boot_count").commit();
-            return false;
+        for (ComponentName home : new ComponentName[] {GOOGLE_TV_HOME, GOOGLE_TV_VANILLA_HOME}) {
+            try {
+                c.startActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+                        .setComponent(home).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                return true;
+            } catch (Exception ignored) {}
         }
+        prefs.edit().remove("google_tv_boot").remove("google_tv_boot_count").commit();
+        return false;
     }
 }
